@@ -86,6 +86,7 @@ export function computeReport(events: TaxEvent[], opts: Options): Report {
   const disposals: DisposalLine[] = [];
   const income: IncomeLine[] = [];
   const warnings: string[] = [];
+  const shortfalls = new Map<string, { units: number; first: string; count: number }>();
 
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
 
@@ -130,7 +131,9 @@ export function computeReport(events: TaxEvent[], opts: Options): Report {
       if (taken.shortfall) usdCost = units;
     }
     if (taken.shortfall && category !== 2) {
-      warnings.push(`${e.date}: sold ${fmt(taken.shortfall)} ${asset} with no recorded purchase. Its cost is treated as nil until you add how you got it.`);
+      const k = asset.toUpperCase();
+      const s0 = shortfalls.get(k) ?? { units: 0, first: e.date, count: 0 };
+      s0.units += taken.shortfall; s0.count += 1; shortfalls.set(k, s0);
     }
     const usdGain = usdProceeds - usdCost;
     const wht = viaVasp && whtAppliesOnDisposal(category);
@@ -190,6 +193,10 @@ export function computeReport(events: TaxEvent[], opts: Options): Report {
         break;
       }
     }
+  }
+
+  for (const [asset, sf] of shortfalls) {
+    warnings.push(`${fmt(sf.units)} ${asset} left your wallet (${sf.count} time${sf.count > 1 ? 's' : ''}, first on ${sf.first}) with no record of how you got it, so its cost is treated as nil. Add the wallet you bought it from, or label the purchase, to lower the tax.`);
   }
 
   // Para 9.4: net all disposals for the year in naira; losses only against VA gains, carried forward indefinitely.

@@ -44,7 +44,7 @@ function range(o: FetchOptions): string {
 
 export async function fetchTron(wallet: string, o: FetchOptions = {}): Promise<Movement[]> {
   const f = o.fetchImpl ?? fetch;
-  const maxPages = o.maxPages ?? 25;
+  const maxPages = o.maxPages ?? 12;
   const out: Movement[] = [];
 
   // TRC-20 transfers

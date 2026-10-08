@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CryptoTax NG · Your crypto tax, worked out the NRS way</title>
+<meta name="description" content="Paste your wallet. Get your Nigerian crypto and stablecoin tax worked out under the NRS Guidelines on the Taxation of Virtual Assets (July 2026), in naira, at official CBN rates.">
+<style>
+:root{--bg:#0b1210;--card:#121c19;--line:#1f2d29;--ink:#e8f1ee;--mute:#93a7a0;--acc:#2fd38a;--acc2:#0f8a57;--warn:#ffb340;--bad:#ff6b6b;--r:14px}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:radial-gradient(1200px 600px at 80% -10%,#123528 0,transparent 60%),var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+a{color:var(--acc)}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 60px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:6px 0 18px}
+.brand{font-weight:800;letter-spacing:.2px}.brand span{color:var(--acc)}
+.pill{font-size:12px;color:var(--mute);border:1px solid var(--line);border-radius:99px;padding:4px 10px}
+h1{font-size:clamp(28px,6vw,46px);line-height:1.1;margin:10px 0 12px}
+.lede{color:var(--mute);max-width:640px;margin:0 0 22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+label{display:block;font-size:13px;color:var(--mute);margin:12px 0 6px}
+textarea,input,select{width:100%;background:#0d1513;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit}
+textarea{min-height:92px;font-family:ui-monospace,Menlo,monospace;font-size:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{background:var(--acc);color:#04130c;border:0;border-radius:10px;padding:13px 18px;font-weight:700;font-size:16px;cursor:pointer;width:100%;margin-top:16px}
+button.ghost{background:transparent;color:var(--acc);border:1px solid var(--acc2);width:auto;padding:9px 14px;font-size:14px;margin:0}
+button:disabled{opacity:.6;cursor:wait}
+.hint{font-size:13px;color:var(--mute);margin-top:8px}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0}
+.fact b{display:block;font-size:22px;color:var(--acc)}.fact{font-size:13px;color:var(--mute)}
+#out{margin-top:22px}
+.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.sum .card{padding:14px}.sum small{color:var(--mute);font-size:12px;display:block}.sum b{font-size:20px}
+.big b{color:var(--acc);font-size:26px}
+.note{border-left:3px solid var(--warn);padding:10px 12px;background:#1d1a10;border-radius:8px;margin:10px 0;font-size:14px}
+.err{border-left-color:var(--bad);background:#211213}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:12px}
+.in{color:var(--acc)}.out{color:#ff9e7a}
+.why{font-size:12px;color:var(--mute);margin-top:4px}
+.need{background:#1a1810}
+td select,td input{padding:7px;font-size:13px;margin-top:4px}
+.tabs{display:flex;gap:8px;margin:18px 0 10px;flex-wrap:wrap}
+.tabs button{width:auto;margin:0;padding:8px 12px;font-size:14px;background:#0d1513;color:var(--ink);border:1px solid var(--line)}
+.tabs button.on{background:var(--acc);color:#04130c}
+footer{margin-top:40px;color:var(--mute);font-size:13px}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #04130c;border-right-color:transparent;border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes s{to{transform:rotate(360deg)}}
+@media(max-width:720px){.sum{grid-template-columns:1fr 1fr}.facts{grid-template-columns:1fr}.row{grid-template-columns:1fr}.hide-sm{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav><div class="brand">CryptoTax<span> NG</span></div><div class="pill">NRS Guidelines, 31 July 2026</div></nav>
+
+<h1>Paid in USDT? Here's your crypto tax, worked out the NRS way.</h1>
+<p class="lede">Paste your wallet. We read your on-chain history, value every coin at the official CBN rate on the day, and apply Nigeria's new virtual asset tax rules. You get an estimate in naira and a report you can file from. No sign-up, nothing to connect.</p>
+
+<form id="f" class="card">
+  <label for="w">Your wallet addresses (one per line, up to 5). Tron (T…) and Ethereum, Optimism or Gnosis (0x…).</label>
+  <textarea id="w" placeholder="TXyz… or 0xabc…" spellcheck="false" required></textarea>
+  <div class="row">
+    <div><label for="y">Tax year</label><select id="y"><option>2026</option><option>2025</option></select></div>
+    <div><label for="o">Other taxable income this year in ₦ (optional)</label><input id="o" inputmode="numeric" placeholder="e.g. 2400000"></div>
+  </div>
+  <button id="go" type="submit">Work out my crypto tax</button>
+  <div class="hint">We only read public blockchain data. Nothing is stored and you never sign anything.</div>
+</form>
+
+<div class="facts">
+  <div class="card fact"><b>31 Mar 2027</b>Deadline to file your 2026 return</div>
+  <div class="card fact"><b>₦100,000</b>Penalty for not filing, then ₦50,000 a month</div>
+  <div class="card fact"><b>$ → ₦</b>Gains measured in dollars, so naira devaluation is not taxed as profit</div>
+</div>
+
+<div id="out"></div>
+
+<footer>
+  <p>This is an estimate to help you file, not tax advice. Rules: NRS Information Circular 2026/21, <em>Guidelines on the Taxation of Virtual Assets</em> (31 July 2026). Rates: CBN central rate. Prices: DefiLlama; the NRS has not yet published its approved price sources. Confirm with a tax professional or the NRS before filing.</p>
+  <p>Open source, MIT.</p>
+</footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const ngn = n => '₦' + Math.round(n).toLocaleString('en-NG');
+const usd = n => n == null ? '—' : '$' + n.toLocaleString('en-US', {maximumFractionDigits: 2});
+const units = n => n.toLocaleString('en-US', {maximumFractionDigits: 6});
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let labels = {}, last = null, tab = 'review';
+
+const LABELS_IN = [['income:professional','Payment for work'],['income:employment','Salary'],['income:staking','Staking reward'],['income:airdrop','Airdrop'],['income:defi','DeFi yield'],['bought','Bought with naira'],['own_wallet','From my own wallet or exchange'],['gift_in','Gift'],['ignore','Spam, ignore']];
+const LABELS_OUT = [['payment','Paid for something'],['sold','Sold for naira (P2P)'],['own_wallet','To my own wallet or exchange'],['gift_out','Gift'],['ignore','Spam, ignore']];
+
+function labelKey(l){ if(!l) return ''; return l.kind === 'income' ? 'income:' + l.incomeKind : l.kind; }
+function toLabel(key, naira){
+  if(!key) return null;
+  if(key.startsWith('income:')) return {kind:'income', incomeKind:key.split(':')[1]};
+  if(key === 'bought' || key === 'sold') return {kind:key, naira: Number(naira)||0};
+  return {kind:key};
+}
+
+async function run(){
+  const wallets = $('#w').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
+  const btn = $('#go'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Reading your wallet history…';
+  try {
+    let res, j;
+    for (let i = 0; i < 8; i++) {
+      res = await fetch('/api/report', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({wallets, year:Number($('#y').value), otherIncome: Number(($('#o').value||'').replace(/[^\d.]/g,''))||0, labels})});
+      if (res.status !== 503) break;
+      await new Promise(r => setTimeout(r, 3000));
+    }
+    j = await res.json().catch(() => ({error:'The server sent something unexpected. Try again.'}));
+    if (!res.ok || j.error) throw new Error(j.error || res.statusText);
+    last = j; render();
+  } catch (e) {
+    $('#out').innerHTML = `<div class="note err">${esc(e.message)}</div>`;
+  } finally { btn.disabled = false; btn.textContent = 'Work out my crypto tax'; }
+}
+
+function render(){
+  const j = last, t = j.totals, e = j.estimate;
+  const need = j.rows.filter(r => !r.label);
+  let h = `<div class="sum">
+    <div class="card big"><small>Estimated tax from crypto</small><b>${ngn(e.estimatedBalanceDue)}</b></div>
+    <div class="card"><small>Crypto income (taxed when received)</small><b>${ngn(t.incomeNaira)}</b></div>
+    <div class="card"><small>Net gains on sales and swaps</small><b>${ngn(t.netDisposalNaira)}</b></div>
+    <div class="card"><small>Tax already withheld</small><b>${ngn(t.whtCreditNaira)}</b></div>
+  </div>`;
+  if (need.length) h += `<div class="note"><b>${need.length} item${need.length>1?'s':''} need you.</b> We can't tell what these were from the blockchain alone. Pick an answer and press Recalculate. Until then they are not taxed, which may understate your bill.</div>`;
+  if (j.unpriced) h += `<div class="note">${j.unpriced} item${j.unpriced>1?'s':''} had no market price (often spam tokens) and were left out.</div>`;
+  for (const w of j.warnings.slice(0,6)) h += `<div class="note">${esc(w)}</div>`;
+  h += `<div class="tabs">
+    <button data-t="review" class="${tab==='review'?'on':''}">All transactions (${j.rows.length})</button>
+    <button data-t="income" class="${tab==='income'?'on':''}">Income (${j.income.length})</button>
+    <button data-t="disp" class="${tab==='disp'?'on':''}">Sales and swaps (${j.disposals.length})</button>
+    <button data-t="how" class="${tab==='how'?'on':''}">How it's worked out</button>
+  </div><div class="card" style="overflow-x:auto">`;
+  if (tab === 'review') {
+    h += `<table><tr><th>Date</th><th>What moved</th><th class="hide-sm">Value</th><th>What it was</th></tr>`;
+    for (const r of j.rows.slice(0, 400)) {
+      const opts = (r.direction === 'in' ? LABELS_IN : LABELS_OUT);
+      const key = labels[r.id] ? labelKey(labels[r.id]) : labelKey(r.label);
+      const nairaNeeded = key === 'bought' || key === 'sold';
+      h += `<tr class="${!r.label?'need':''}"><td>${r.date}</td>
+        <td><span class="${r.direction}">${r.direction==='in'?'+':'−'}${units(r.units)} ${esc(r.symbol)}</span><div class="why mono">${esc(r.chain)} · ${esc(r.counterparty.slice(0,6))}…${esc(r.counterparty.slice(-4))}</div></td>
+        <td class="hide-sm">${usd(r.usd)}</td>
+        <td>${r.swap && !labels[r.id] ? '<b>Swap</b>' : `<select data-id="${esc(r.id)}"><option value="">Choose…</option>${opts.map(([v,l])=>`<option value="${v}" ${v===key?'selected':''}>${l}</option>`).join('')}</select>
+        ${nairaNeeded ? `<input data-naira="${esc(r.id)}" placeholder="Naira ${key==='bought'?'paid':'received'}" inputmode="numeric" value="${labels[r.id]?.naira||''}">` : ''}`}
+        <div class="why">${esc(r.reason)}</div></td></tr>`;
+    }
+    h += `</table>${j.rows.length>400?'<div class="hint">Showing the first 400.</div>':''}
+      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="ghost" id="recalc">Recalculate</button><button class="ghost" id="csv">Download CSV</button></div>`;
+  } else if (tab === 'income') {
+    h += `<table><tr><th>Date</th><th>Received</th><th>Type</th><th>Dollar value</th><th>CBN rate</th><th>Taxable ₦</th></tr>`;
+    for (const i of j.income) h += `<tr><td>${i.date}</td><td>${units(i.units)} ${esc(i.asset)}</td><td>${esc(i.kind)}</td><td>${usd(i.usdFmv)}</td><td>${i.rate}</td><td>${ngn(i.naira)}</td></tr>`;
+    h += `</table>`;
+  } else if (tab === 'disp') {
+    h += `<table><tr><th>Date</th><th>Disposed</th><th>Cost $</th><th>Proceeds $</th><th>Gain $</th><th>CBN rate</th><th>Gain ₦</th></tr>`;
+    for (const d of j.disposals) h += `<tr><td>${d.date}</td><td>${units(d.units)} ${esc(d.asset)}${d.category===2?' <span class="why">(stablecoin)</span>':''}</td><td>${usd(d.usdCost)}</td><td>${usd(d.usdProceeds)}</td><td>${usd(d.usdGain)}</td><td>${d.rate}</td><td>${ngn(d.nairaGain)}</td></tr>`;
+    h += `</table>`;
+  } else {
+    h += `<p><b>Income.</b> Crypto you receive as pay, rewards or airdrops is income on the day you get it: its dollar value times the CBN rate that day (para 6.1.1, 9.5).</p>
+      <p><b>Sales and swaps.</b> Gains are worked out in dollars first: what you got minus what it cost, both in dollars. Only that dollar gain is turned into naira, at the CBN rate on the day you sold (para 9.1). So if the naira falls while you hold, that fall is not taxed.</p>
+      <p><b>Stablecoins.</b> USDT, USDC and similar are measured against the dollar, so selling them usually has no gain and no withholding tax (para 9.5(1)).</p>
+      <p><b>Not taxable.</b> Moving coins between your own wallets, wrapping, and simply holding (para 7.2).</p>
+      <p><b>Losses</b> on crypto only reduce crypto gains, and carry forward (para 9.4). Costs are matched first in, first out.</p>
+      <p><b>Your bill.</b> Crypto income and net gains are added to your other income and taxed at the 2026 personal income tax bands: 0% on the first ₦800,000, then 15% to 25%. Tax already withheld by an exchange is taken off.</p>
+      <p class="hint">${j.sources.map(esc).join('<br>')}</p>`;
+  }
+  h += `</div>`;
+  $('#out').innerHTML = h;
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; render(); });
+  document.querySelectorAll('select[data-id]').forEach(s => s.onchange = () => {
+    const id = s.dataset.id; const l = toLabel(s.value, 0);
+    if (l) labels[id] = l; else delete labels[id];
+    render();
+  });
+  document.querySelectorAll('input[data-naira]').forEach(i => i.onchange = () => {
+    const id = i.dataset.naira; if (labels[id]) labels[id].naira = Number(i.value.replace(/[^\d.]/g,''))||0;
+  });
+  $('#recalc') && ($('#recalc').onclick = run);
+  $('#csv') && ($('#csv').onclick = csv);
+}
+
+function csv(){
+  const j = last; const rows = [['date','chain','tx','direction','asset','units','usd_value','treated_as','reason']];
+  for (const r of j.rows) rows.push([r.date, r.chain, r.hash, r.direction, r.symbol, r.units, r.usd ?? '', labelKey(labels[r.id] || r.label) || 'needs review', r.reason]);
+  rows.push([]); rows.push(['income_naira', j.totals.incomeNaira]); rows.push(['net_gains_naira', j.totals.netDisposalNaira]);
+  rows.push(['wht_credit_naira', j.totals.whtCreditNaira]); rows.push(['estimated_tax_from_crypto_naira', j.estimate.estimatedBalanceDue]);
+  const text = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'text/csv'}));
+  a.download = `crypto-tax-${j.year}.csv`; a.click();
+}
+
+$('#f').onsubmit = ev => { ev.preventDefault(); labels = {}; tab = 'review'; run(); };
+</script>
+</body>
+</html>

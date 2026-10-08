@@ -28,7 +28,7 @@ const inRange = (ts: number, o: FetchOptions) => (!o.from || ts >= o.from) && (!
 async function pages(base: string, path: string, o: FetchOptions, each: (item: any) => void) {
   const f = o.fetchImpl ?? fetch;
   let params = '';
-  for (let p = 0; p < (o.maxPages ?? 25); p++) {
+  for (let p = 0; p < (o.maxPages ?? 12); p++) {
     const j = await getJson(`${base}${path}${params}`, f);
     let older = false;
     for (const it of j.items ?? []) {

@@ -32,8 +32,15 @@ export interface PipelineOutput {
   errors: string[];
 }
 
+// Fetched history and prices are kept for 20 minutes so relabelling does not refetch.
+const historyCache = new Map<string, { at: number; moves: Movement[]; errors: string[]; prices: Map<string, number | null> }>();
+const HISTORY_TTL = 20 * 60_000;
+
 export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
   const f = inp.fetchImpl ?? fetch;
+  const cacheKey = [inp.year, ...[...inp.wallets].sort(), ...(inp.chains ?? [])].join('|');
+  const hit = historyCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < HISTORY_TTL) return finish(inp, hit.moves, hit.prices, [...hit.errors], f);
   // History from 1 Jan 2025 so earlier purchases give a cost base for this year's sales.
   const from = Date.UTC(inp.year - 1, 0, 1) / 1000;
   const to = Math.min(Date.UTC(inp.year, 11, 31, 23, 59, 59) / 1000, Math.floor(Date.now() / 1000));
@@ -53,8 +60,16 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
     } catch (e) { errors.push(`History for ${short(w)} could not be read (${(e as Error).message}).`); }
   }));
   moves.sort((a, b) => a.timestamp - b.timestamp);
+  const prices = await loadPrices(moves, f);
+  if (historyCache.size > 300) historyCache.clear();
+  historyCache.set(cacheKey, { at: Date.now(), moves, errors: [...errors], prices });
+  return finish(inp, moves, prices, errors, f);
+}
 
-  const [rates, prices] = await Promise.all([loadRates(f), loadPrices(moves, f)]);
+async function finish(
+  inp: PipelineInput, moves: Movement[], prices: Map<string, number | null>, errors: string[], f: typeof fetch,
+): Promise<PipelineOutput> {
+  const rates = await loadRates(f);
   const price = priceFn(prices);
   const classified = classify(moves, price, inp.wallets, inp.labels);
 
