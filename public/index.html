@@ -112,6 +112,15 @@ async function run(){
       await new Promise(r => setTimeout(r, 3000));
     }
     j = await res.json().catch(() => ({error:'The server sent something unexpected. Try again.'}));
+    // Big wallets: the server hands back a job id; keep checking until the report is ready (up to ~6 minutes).
+    let polls = 0;
+    while (res.status === 202 && j.pending && polls++ < 120) {
+      btn.innerHTML = `<span class="spin"></span>Still reading a big wallet… ${polls * 3}s`;
+      await new Promise(r => setTimeout(r, 3000));
+      res = await fetch('/api/report/' + j.id);
+      j = await res.json().catch(() => ({pending:true, id:j.id}));
+    }
+    if (res.status === 202) throw new Error('This wallet is taking too long to read. Try again in a minute; what was already read is kept.');
     if (!res.ok || j.error) throw new Error(j.error || res.statusText);
     last = j; render();
   } catch (e) {

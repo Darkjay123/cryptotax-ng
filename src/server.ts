@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
+import { createHash } from 'node:crypto';
 import { runPipeline } from './pipeline.js';
 import type { Label } from './classify.js';
 import { isTronAddress } from './wallet/tron.js';
@@ -27,6 +28,20 @@ function limited(ip: string): boolean {
 
 app.get('/healthz', c => c.json({ ok: true }));
 
+// Big wallets can take longer than the hosting gateway allows (about 60s), so a report
+// runs as a job: we wait up to 20s, then hand back a job id the page polls.
+type Job = { at: number; done: boolean; result?: unknown; status?: number };
+const jobs = new Map<string, Job>();
+const JOB_TTL = 30 * 60_000;
+function sweepJobs() { const now = Date.now(); for (const [k, j] of jobs) if (now - j.at > JOB_TTL) jobs.delete(k); }
+
+app.get('/api/report/:id', c => {
+  const j = jobs.get(c.req.param('id'));
+  if (!j) return c.json({ error: 'That report expired. Run it again.' }, 404);
+  if (!j.done) return c.json({ pending: true, id: c.req.param('id') }, 202);
+  return c.json(j.result as object, (j.status ?? 200) as 200);
+});
+
 app.post('/api/report', async c => {
   const ip = c.req.header('x-forwarded-for')?.split(',')[0].trim() ?? 'local';
   if (limited(ip)) return c.json({ error: 'Too many requests. Wait a minute and try again.' }, 429);
@@ -43,10 +58,26 @@ app.post('/api/report', async c => {
   if (![2025, 2026].includes(year)) return c.json({ error: 'Year must be 2025 or 2026.' }, 400);
   const labels = (body.labels && typeof body.labels === 'object') ? body.labels as Record<string, Label> : {};
   const other = Math.max(0, Number(body.otherIncome ?? 0) || 0);
+  const id = createHash('sha256').update(JSON.stringify([wallets.slice().sort(), year, labels, other, body.method])).digest('hex').slice(0, 24);
+  sweepJobs();
+  let job = jobs.get(id);
+  if (!job || (job.done && job.status !== 200)) {
+    job = { at: Date.now(), done: false };
+    jobs.set(id, job);
+    const j = job;
+    build(wallets, year, labels, other, body).then(r => { j.result = r.body; j.status = r.status; j.done = true; });
+  }
+  const started = Date.now();
+  while (!job.done && Date.now() - started < 20_000) await new Promise(r => setTimeout(r, 250));
+  if (!job.done) return c.json({ pending: true, id }, 202);
+  return c.json(job.result as object, (job.status ?? 200) as 200);
+});
+
+async function build(wallets: string[], year: number, labels: Record<string, Label>, other: number, body: any): Promise<{ status: number; body: unknown }> {
   try {
     const out = await runPipeline({ wallets, year, labels, otherChargeableNaira: other, method: body.method === 'WAC' ? 'WAC' : 'FIFO' });
     const inYear = (d: string) => d.startsWith(String(year));
-    return c.json({
+    return { status: 200, body: {
       year,
       totals: out.report.totals,
       estimate: out.estimate,
@@ -62,11 +93,11 @@ app.post('/api/report', async c => {
       warnings: [...out.report.warnings, ...out.errors],
       rateNotes: out.rateNotes.length,
       sources: out.sources,
-    });
+    } };
   } catch (e) {
-    return c.json({ error: `Could not build the report: ${(e as Error).message}` }, 502);
+    return { status: 502, body: { error: `Could not build the report: ${(e as Error).message}` } };
   }
-});
+}
 
 app.use('/*', serveStatic({ root: './public' }));
 

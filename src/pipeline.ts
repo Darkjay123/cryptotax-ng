@@ -41,8 +41,8 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
   const cacheKey = [inp.year, ...[...inp.wallets].sort(), ...(inp.chains ?? [])].join('|');
   const hit = historyCache.get(cacheKey);
   if (hit && Date.now() - hit.at < HISTORY_TTL) return finish(inp, hit.moves, hit.prices, [...hit.errors], f);
-  // History from 1 Jan 2025 so earlier purchases give a cost base for this year's sales.
-  const from = Date.UTC(inp.year - 1, 0, 1) / 1000;
+  // Read back to 2020 so older purchases give a cost base for this year's sales (para 9.3).
+  const from = Date.UTC(2020, 0, 1) / 1000;
   const to = Math.min(Date.UTC(inp.year, 11, 31, 23, 59, 59) / 1000, Math.floor(Date.now() / 1000));
   const errors: string[] = [];
   const moves: Movement[] = [];
