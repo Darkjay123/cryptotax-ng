@@ -26,9 +26,23 @@ export interface Row {
   swapWith?: string;         // id of the other leg if this is half of a swap
 }
 
-export interface Classified { rows: Row[]; events: TaxEvent[]; unpriced: Row[]; needsReview: number }
+export interface Classified { rows: Row[]; events: TaxEvent[]; unpriced: Row[]; spam: number; needsReview: number }
 
 const isStable = (s: string) => !!STABLECOINS[s];
+
+/**
+ * Spam and fake tokens: names that are web addresses or adverts, emoji, or
+ * look-alike letters pretending to be a real coin (e.g. "ℰ⊤ℋ" posing as ETH).
+ * These are airdropped to lure people to scam sites and have no value.
+ */
+export function looksSpam(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return true;
+  if (/(https?:|www\.|\.(com|io|net|org|xyz|cfd|lat|club|site|top|app|gift|pro|vip|fun|claim|live|online|link)\b)/i.test(s)) return true;
+  if (/(claim|reward|visit|voucher|airdrop|\$\s*\d)/i.test(s)) return true;
+  if (/[^\x20-\x7E]/.test(s)) return true;          // emoji, look-alike letters, invisible characters
+  return false;
+}
 
 export function classify(
   moves: Movement[], price: PriceFn, myWallets: string[], labels: Record<string, Label> = {},
@@ -62,6 +76,12 @@ export function classify(
     if (mine.has(m.counterparty.toLowerCase())) {
       r.guess = { kind: 'own_wallet' };
       r.reason = 'Moved between your own wallets. Not taxable (para 7.2.2).';
+    } else if (looksSpam(m.symbol)) {
+      r.guess = { kind: 'ignore' };
+      r.reason = 'Looks like a spam or fake token (its name is a web address, emoji or look-alike letters). These are sent out to lure people to scam sites and have no value, so it is left out. Do not visit any site it names.';
+    } else if (r.usd == null) {
+      r.guess = { kind: 'ignore' };
+      r.reason = 'No market price could be found for this token on that day, so it cannot be valued and is left out. If it was worth something, tell us what it was and add its value with a tax adviser.';
     } else if (m.direction === 'in' && isStable(m.symbol)) {
       r.guess = { kind: 'income', incomeKind: 'professional' };
       r.reason = 'Stablecoin received from someone else. Guessed as payment for work, taxed as income on the day received. Change it if you bought it with naira or it came from your own exchange account.';
@@ -128,6 +148,13 @@ export function classify(
       case 'gift_out': break; // no income tax on donor (item 15)
     }
   }
+  // Report left-out items honestly: spam separately, everything else without a price as unpriced.
+  let spam = 0;
+  for (const r of rows) {
+    if (labels[r.id] || r.swapWith || r.label?.kind !== 'ignore') continue;
+    if (looksSpam(r.move.symbol)) spam++;
+    else if (r.usd == null) unpriced.push(r);
+  }
   const needsReview = rows.filter(r => !r.label).length;
-  return { rows, events, unpriced, needsReview };
+  return { rows, events, unpriced, spam, needsReview };
 }

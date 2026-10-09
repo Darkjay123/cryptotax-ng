@@ -101,7 +101,7 @@ function toLabel(key, naira){
   return {kind:key};
 }
 
-async function run(){
+async function run(ev){
   const wallets = $('#w').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
   const btn = $('#go'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Reading your wallet history…';
   try {
@@ -122,7 +122,8 @@ async function run(){
     }
     if (res.status === 202) throw new Error('This wallet is taking too long to read. Try again in a minute; what was already read is kept.');
     if (!res.ok || j.error) throw new Error(j.error || res.statusText);
-    last = j; render();
+    const first = !last; last = j; render();
+    if (first || ev === 'submit') $('#out').scrollIntoView({behavior:'smooth', block:'start'});
   } catch (e) {
     $('#out').innerHTML = `<div class="note err">${esc(e.message)}</div>`;
   } finally { btn.disabled = false; btn.textContent = 'Work out my crypto tax'; }
@@ -138,7 +139,8 @@ function render(){
     <div class="card"><small>Tax already withheld</small><b>${ngn(t.whtCreditNaira)}</b></div>
   </div>`;
   if (need.length) h += `<div class="note"><b>${need.length} item${need.length>1?'s':''} need you.</b> We can't tell what these were from the blockchain alone. Pick an answer and press Recalculate. Until then they are not taxed, which may understate your bill.</div>`;
-  if (j.unpriced) h += `<div class="note">${j.unpriced} item${j.unpriced>1?'s':''} had no market price (often spam tokens) and were left out.</div>`;
+  if (j.spam) h += `<div class="note">${j.spam} spam or fake token${j.spam>1?'s were':' was'} left out. Never visit a website named in a token you did not ask for.</div>`;
+  if (j.unpriced) h += `<div class="note">${j.unpriced} item${j.unpriced>1?'s':''} had no market price and ${j.unpriced>1?'were':'was'} left out. If any had real value, label it and check with a tax adviser.</div>`;
   for (const w of j.warnings.slice(0,6)) h += `<div class="note">${esc(w)}</div>`;
   h += `<div class="tabs">
     <button data-t="review" class="${tab==='review'?'on':''}">All transactions (${j.rows.length})</button>
@@ -203,7 +205,7 @@ function csv(){
   a.download = `crypto-tax-${j.year}.csv`; a.click();
 }
 
-$('#f').onsubmit = ev => { ev.preventDefault(); labels = {}; tab = 'review'; run(); };
+$('#f').onsubmit = e => { e.preventDefault(); labels = {}; tab = 'review'; run('submit'); };
 </script>
 </body>
 </html>

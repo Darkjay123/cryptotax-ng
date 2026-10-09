@@ -89,6 +89,7 @@ async function build(wallets: string[], year: number, labels: Record<string, Lab
       disposals: out.report.disposals,
       income: out.report.income,
       unpriced: out.classified.unpriced.length,
+      spam: out.classified.spam,
       needsReview: out.classified.rows.filter(r => !r.label && inYear(r.move.date)).length,
       warnings: [...out.report.warnings, ...out.errors],
       rateNotes: out.rateNotes.length,
