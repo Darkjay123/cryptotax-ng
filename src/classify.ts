@@ -47,6 +47,8 @@ export function looksSpam(symbol: string): boolean {
 
 export function classify(
   moves: Movement[], price: PriceFn, myWallets: string[], labels: Record<string, Label> = {},
+  /** Movement index -> reason, for wallet moves matched to the user's own exchange withdrawals/deposits. */
+  ownHints: Map<number, string> = new Map(),
 ): Classified {
   const mine = new Set(myWallets.map(w => w.toLowerCase()));
   const rows: Row[] = moves.map((m, i) => {
@@ -68,13 +70,16 @@ export function classify(
     }
   }
 
-  for (const r of rows) {
+  rows.forEach((r, idx) => {
     const m = r.move;
     if (r.swapWith) {
       r.reason = 'Swapped in one transaction: a disposal of what left and a purchase of what arrived (para 9.3.2).';
-      continue;
+      return;
     }
-    if (mine.has(m.counterparty.toLowerCase())) {
+    if (ownHints.has(idx)) {
+      r.guess = { kind: 'own_wallet' };
+      r.reason = ownHints.get(idx)!;
+    } else if (mine.has(m.counterparty.toLowerCase())) {
       r.guess = { kind: 'own_wallet' };
       r.reason = 'Moved between your own wallets. Not taxable (para 7.2.2).';
     } else if (looksSpam(m.symbol)) {
@@ -96,7 +101,7 @@ export function classify(
       r.guess = { kind: 'payment' };
       r.reason = 'Sent to someone else, treated as a disposal at market value. Mark it as your own wallet or a P2P sale if that is what it was.';
     }
-  }
+  });
 
   for (const r of rows) r.label = labels[r.id] ?? r.guess;
 

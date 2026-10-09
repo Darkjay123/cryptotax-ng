@@ -10,12 +10,16 @@ import { loadRates, rateOn } from './rates.js';
 import { fetchTron, isTronAddress } from './wallet/tron.js';
 import { EVM_CHAINS, fetchEvm, isEvmAddress } from './wallet/evm.js';
 import type { ChainId, Movement } from './wallet/types.js';
+import { buildBinance, ExchangeImport, matchTransfers, priceNeeds, readBinanceFiles } from './exchange/binance.js';
+import { createHash } from 'node:crypto';
 
 export interface PipelineInput {
   wallets: string[];
   year: number;
   chains?: ChainId[];          // EVM chains to scan for 0x addresses (default: all supported)
   labels?: Record<string, Label>;
+  /** Exchange exports the user uploaded (Binance Transaction History / P2P Order History CSV). */
+  exchangeFiles?: { name: string; text: string }[];
   otherChargeableNaira?: number;
   method?: 'FIFO' | 'WAC';
   fetchImpl?: typeof fetch;
@@ -30,6 +34,7 @@ export interface PipelineOutput {
   rateNotes: string[];
   sources: string[];
   errors: string[];
+  exchange: (ExchangeImport & { matched: number }) | null;
 }
 
 // Fetched history and prices are kept for 20 minutes so relabelling does not refetch.
@@ -39,8 +44,9 @@ const HISTORY_TTL = 20 * 60_000;
 export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
   const f = inp.fetchImpl ?? fetch;
   const cacheKey = [inp.year, ...[...inp.wallets].sort(), ...(inp.chains ?? [])].join('|');
+  const ex = await loadExchange(inp.exchangeFiles ?? [], f);
   const hit = historyCache.get(cacheKey);
-  if (hit && Date.now() - hit.at < HISTORY_TTL) return finish(inp, hit.moves, hit.prices, [...hit.errors], f);
+  if (hit && Date.now() - hit.at < HISTORY_TTL) return finish(inp, hit.moves, hit.prices, [...hit.errors], f, ex);
   // Read back to 2020 so older purchases give a cost base for this year's sales (para 9.3).
   const from = Date.UTC(2020, 0, 1) / 1000;
   const to = Math.min(Date.UTC(inp.year, 11, 31, 23, 59, 59) / 1000, Math.floor(Date.now() / 1000));
@@ -63,15 +69,34 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
   const prices = await loadPrices(moves, f);
   if (historyCache.size > 300) historyCache.clear();
   historyCache.set(cacheKey, { at: Date.now(), moves, errors: [...errors], prices });
-  return finish(inp, moves, prices, errors, f);
+  return finish(inp, moves, prices, errors, f, ex);
+}
+
+// Parsed exchange files and their coin prices, cached by file contents for relabelling.
+type ExData = { read: ReturnType<typeof readBinanceFiles>; prices: Map<string, number | null> } | null;
+const exCache = new Map<string, { at: number; data: ExData }>();
+async function loadExchange(files: { name: string; text: string }[], f: typeof fetch): Promise<ExData> {
+  if (!files.length) return null;
+  const key = createHash('sha256').update(JSON.stringify(files.map(x => x.text))).digest('hex');
+  const hit = exCache.get(key);
+  if (hit && Date.now() - hit.at < HISTORY_TTL) return hit.data;
+  const read = readBinanceFiles(files);
+  const prices = await loadPrices(priceNeeds(read.legs), f);
+  const data = { read, prices };
+  if (exCache.size > 100) exCache.clear();
+  exCache.set(key, { at: Date.now(), data });
+  return data;
 }
 
 async function finish(
-  inp: PipelineInput, moves: Movement[], prices: Map<string, number | null>, errors: string[], f: typeof fetch,
+  inp: PipelineInput, moves: Movement[], prices: Map<string, number | null>, errors: string[], f: typeof fetch, ex: ExData = null,
 ): Promise<PipelineOutput> {
   const rates = await loadRates(f);
   const price = priceFn(prices);
-  const classified = classify(moves, price, inp.wallets, inp.labels);
+  const built = ex ? buildBinance(ex.read, priceFn(ex.prices)) : null;
+  const hints = built ? matchTransfers(moves, built) : new Map<number, string>();
+  const classified = classify(moves, price, inp.wallets, inp.labels, hints);
+  if (built) classified.events.push(...built.events);
 
   const rateNotes = new Set<string>();
   const rate = (d: string) => {
@@ -99,8 +124,10 @@ async function finish(
       'Naira rates: CBN central rate, https://www.cbn.gov.ng/api/GetAllExchangeRates',
       'Token prices: DefiLlama historical prices (NRS has not yet published its approved price sources)',
       'Wallet history: TronGrid and public Blockscout explorers',
+      ...(built ? ['Exchange history: the Binance exports you uploaded (read in your browser session, not stored)'] : []),
     ],
     errors,
+    exchange: built ? { ...built, matched: hints.size } : null,
   };
 }
 
