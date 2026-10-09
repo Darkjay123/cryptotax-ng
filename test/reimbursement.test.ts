@@ -8,11 +8,11 @@ describe('reimbursement label', () => {
   it('is not income, but the coins enter the cost base at market value', () => {
     const moves = [move('a', 1500), move('b', 690)];
     const out: any = classify(moves, () => 1, [W], {
-      a: { kind: 'income', incomeKind: 'professional' },
-      b: { kind: 'reimbursement' },
+      'ethereum:a:0': { kind: 'income', incomeKind: 'professional' },
+      'ethereum:b:1': { kind: 'reimbursement' },
     });
     const ev = out.events;
     expect(ev.filter((e: any) => e.type === 'income').map((e: any) => e.usdFmv)).toEqual([1500]);
-    expect(ev.find((e: any) => e.id === 'b')).toMatchObject({ type: 'opening', usdCost: 690, units: 690 });
+    expect(ev.find((e: any) => e.id === 'ethereum:b:1')).toMatchObject({ type: 'opening', usdCost: 690, units: 690 });
   });
 });
