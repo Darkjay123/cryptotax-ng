@@ -14,5 +14,6 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY public ./public
+COPY models ./models
 EXPOSE 8080
 CMD ["node", "--max-old-space-size=192", "dist/server.js"]

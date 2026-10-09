@@ -6,6 +6,7 @@ import { runPipeline } from './pipeline.js';
 import type { Label } from './classify.js';
 import { isTronAddress } from './wallet/tron.js';
 import { isEvmAddress } from './wallet/evm.js';
+import { understand } from './model/notes.js';
 
 export const app = new Hono();
 
@@ -27,6 +28,20 @@ function limited(ip: string): boolean {
 }
 
 app.get('/healthz', c => c.json({ ok: true }));
+
+// Our own notes model: "what was this money for?" -> a suggested label. It never sets tax by itself.
+app.post('/api/understand', async c => {
+  const ip = c.req.header('x-forwarded-for')?.split(',')[0].trim() ?? 'local';
+  if (limited(ip)) return c.json({ error: 'Too many requests. Wait a minute and try again.' }, 429);
+  const body = await c.req.json().catch(() => null) as any;
+  const notes = Array.isArray(body?.notes) ? body.notes.slice(0, 200) : [];
+  if (!notes.length) return c.json({ error: 'Send notes: [{id, text, direction}].' }, 400);
+  try {
+    return c.json({ results: notes
+      .filter((n: any) => n && typeof n.text === 'string' && n.text.trim())
+      .map((n: any) => understand(String(n.id ?? ''), n.text.slice(0, 300), n.direction === 'out' ? 'out' : 'in')) });
+  } catch (e) { return c.json({ error: `The notes model could not run: ${(e as Error).message}` }, 500); }
+});
 
 // Big wallets can take longer than the hosting gateway allows (about 60s), so a report
 // runs as a job: we wait up to 20s, then hand back a job id the page polls.

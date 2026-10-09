@@ -93,7 +93,7 @@ const units = n => n.toLocaleString('en-US', {maximumFractionDigits: 6});
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let labels = {}, last = null, tab = 'review';
 
-let uploads = [];
+let uploads = [], notes = {}, reads = {};
 async function readFiles(){
   const fs = [...($('#files').files || [])];
   uploads = await Promise.all(fs.map(f => f.text().then(text => ({name: f.name, text}))));
@@ -189,6 +189,8 @@ function render(){
         <td class="hide-sm">${usd(r.usd)}</td>
         <td>${r.swap && !labels[r.id] ? '<b>Swap</b>' : `<select data-id="${esc(r.id)}"><option value="">Choose…</option>${opts.map(([v,l])=>`<option value="${v}" ${v===key?'selected':''}>${l}</option>`).join('')}</select>
         ${nairaNeeded ? `<input data-naira="${esc(r.id)}" placeholder="Naira ${key==='bought'?'paid':'received'}" inputmode="numeric" value="${labels[r.id]?.naira||''}">` : ''}`}
+        <input data-note="${esc(r.id)}" data-dir="${r.direction}" placeholder="What was this for? Type it any way, English or Pidgin" value="${esc(notes[r.id]||'')}" style="margin-top:6px">
+        ${reads[r.id] ? `<div class="why"><b>Read as: ${esc(reads[r.id].name)}</b> (${Math.round(reads[r.id].confidence*100)}% sure). ${esc(reads[r.id].why)}</div>` : ''}
         <div class="why">${esc(r.reason)}</div></td></tr>`;
     }
     h += `</table>${j.rows.length>400?'<div class="hint">Showing the first 400.</div>':''}
@@ -221,13 +223,24 @@ function render(){
   document.querySelectorAll('input[data-naira]').forEach(i => i.onchange = () => {
     const id = i.dataset.naira; if (labels[id]) labels[id].naira = Number(i.value.replace(/[^\d.]/g,''))||0;
   });
+  document.querySelectorAll('input[data-note]').forEach(i => i.onchange = async () => {
+    const id = i.dataset.note, text = i.value.trim();
+    notes[id] = text;
+    if (!text) { delete reads[id]; render(); return; }
+    try {
+      const r = await fetch('/api/understand', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({notes:[{id, text, direction: i.dataset.dir}]})});
+      const u = (await r.json()).results?.[0];
+      if (u) { reads[id] = u; if (u.label) labels[id] = u.label; }
+    } catch {}
+    render();
+  });
   $('#recalc') && ($('#recalc').onclick = run);
   $('#csv') && ($('#csv').onclick = csv);
 }
 
 function csv(){
-  const j = last; const rows = [['date','chain','tx','direction','asset','units','usd_value','treated_as','reason']];
-  for (const r of j.rows) rows.push([r.date, r.chain, r.hash, r.direction, r.symbol, r.units, r.usd ?? '', labelKey(labels[r.id] || r.label) || 'needs review', r.reason]);
+  const j = last; const rows = [['date','chain','tx','direction','asset','units','usd_value','treated_as','your_note','reason']];
+  for (const r of j.rows) rows.push([r.date, r.chain, r.hash, r.direction, r.symbol, r.units, r.usd ?? '', labelKey(labels[r.id] || r.label) || 'needs review', notes[r.id] || '', r.reason]);
   rows.push([]); rows.push(['income_naira', j.totals.incomeNaira]); rows.push(['net_gains_naira', j.totals.netDisposalNaira]);
   rows.push(['wht_credit_naira', j.totals.whtCreditNaira]); rows.push(['estimated_tax_from_crypto_naira', j.estimate.estimatedBalanceDue]);
   const text = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -235,7 +248,7 @@ function csv(){
   a.download = `crypto-tax-${j.year}.csv`; a.click();
 }
 
-$('#f').onsubmit = e => { e.preventDefault(); labels = {}; tab = 'review'; run('submit'); };
+$('#f').onsubmit = e => { e.preventDefault(); labels = {}; notes = {}; reads = {}; tab = 'review'; run('submit'); };
 </script>
 </body>
 </html>
