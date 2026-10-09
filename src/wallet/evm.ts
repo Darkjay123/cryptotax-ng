@@ -12,9 +12,9 @@ export const EVM_CHAINS: Record<Exclude<ChainId, 'tron'>, { api: string; native:
 
 export const isEvmAddress = (a: string) => /^0x[0-9a-fA-F]{40}$/.test(a);
 
-async function getJson(url: string, f: typeof fetch): Promise<any> {
+async function getJson(url: string, f: typeof fetch, timeoutMs = 25_000): Promise<any> {
   for (let i = 0; i < 4; i++) {
-    const r = await f(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(25_000) });
+    const r = await f(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(timeoutMs) });
     if (r.status === 429) { await new Promise(res => setTimeout(res, 1500 * (i + 1))); continue; }
     if (!r.ok) throw new Error(`explorer ${r.status}`);
     return r.json();
@@ -25,11 +25,12 @@ async function getJson(url: string, f: typeof fetch): Promise<any> {
 const tsOf = (iso: string) => Math.floor(Date.parse(iso) / 1000);
 const inRange = (ts: number, o: FetchOptions) => (!o.from || ts >= o.from) && (!o.to || ts <= o.to);
 
-async function pages(base: string, path: string, o: FetchOptions, each: (item: any) => void) {
+async function pages(base: string, path: string, o: FetchOptions, each: (item: any) => void, timeoutMs?: number) {
   const f = o.fetchImpl ?? fetch;
   let params = '';
-  for (let p = 0; p < (o.maxPages ?? 12); p++) {
-    const j = await getJson(`${base}${path}${params}`, f);
+  const max = o.maxPages ?? 40;
+  for (let p = 0; p < max; p++) {
+    const j = await getJson(`${base}${path}${params}`, f, timeoutMs);
     let older = false;
     for (const it of j.items ?? []) {
       const ts = tsOf(it.timestamp);
@@ -37,6 +38,7 @@ async function pages(base: string, path: string, o: FetchOptions, each: (item: a
       each(it);
     }
     if (older || !j.next_page_params) break;
+    if (p === max - 1) { o.onTruncated?.(path.split('?')[0].split('/').pop() ?? 'history'); break; }
     const q = new URLSearchParams(Object.entries(j.next_page_params).map(([k, v]) => [k, String(v)]));
     params = (path.includes('?') ? '&' : '?') + q.toString();
   }
@@ -79,6 +81,26 @@ export async function fetchEvm(chain: Exclude<ChainId, 'tron'>, wallet: string, 
       priceKey: c.nativeKey,
     });
   });
+
+  // Native coin sent by contracts (bridges, exchanges' hot wallets, DEX refunds, withdrawals) shows up
+  // only as an internal transaction. Without these, coins look like they arrived from nowhere.
+  const seen = new Set(out.filter(m => m.token === null).map(m => `${m.hash}:${m.direction}`));
+  await pages(c.api, `/addresses/${wallet}/internal-transactions`, { ...o, maxPages: Math.min(o.maxPages ?? 40, 20) }, it => {
+    const ts = tsOf(it.timestamp);
+    if (!inRange(ts, o) || it.success === false || it.error) return;
+    const v = Number(it.value ?? 0) / 1e18;
+    if (!(v > 0)) return;
+    const from = String(it.from?.hash ?? '').toLowerCase(), to = String(it.to?.hash ?? '').toLowerCase();
+    const dir = to === me ? 'in' : from === me ? 'out' : null;
+    if (!dir || from === to) return;
+    const hash = it.transaction_hash;
+    if (seen.has(`${hash}:${dir}`)) return;
+    out.push({
+      chain, hash, timestamp: ts, date: isoDate(ts), wallet: me, direction: dir,
+      counterparty: dir === 'in' ? from : to, symbol: c.native, token: null, decimals: 18, units: v,
+      priceKey: c.nativeKey,
+    });
+  }, 100_000).catch(() => o.onTruncated?.('internal-transactions (contract payouts, could not be read)'));
 
   return out.sort((a, b) => a.timestamp - b.timestamp);
 }

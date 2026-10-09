@@ -12,7 +12,7 @@ From 1 January 2026 every Nigerian earning income must register, file and keep r
 
 ## What it does
 
-1. Reads your wallet history back to 2020 (so older purchases give a cost base): Tron (TRC-20 and TRX), Ethereum, Optimism and Gnosis.
+1. Reads your wallet history back to 2020 (so older purchases give a cost base): Tron (TRC-20 and TRX), Ethereum, Optimism and Gnosis, including coins paid out by contracts (exchange withdrawals, bridges, DEX sales), which only show up as internal transactions. Up to 2,000 records per list; the report says so if a wallet is longer.
 2. Values every movement in US dollars (stablecoins at their peg, other tokens at market price on the day).
 3. Converts to naira at the CBN central rate on each transaction date (last published rate on weekends and holidays).
 4. Applies the NRS rules and estimates the extra personal income tax your crypto adds.

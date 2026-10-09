@@ -50,10 +50,10 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
 
   await Promise.all(inp.wallets.map(async w => {
     try {
-      if (isTronAddress(w)) moves.push(...await fetchTron(w, { from, to, fetchImpl: f }));
+      if (isTronAddress(w)) moves.push(...await fetchTron(w, { from, to, fetchImpl: f, maxPages: 40, onTruncated: () => errors.push(`Tron history for ${short(w)} is very long; only the most recent records were read, so some older purchases may be missing.`) }));
       else if (isEvmAddress(w)) {
         for (const c of evmChains) {
-          try { moves.push(...await fetchEvm(c, w, { from, to, fetchImpl: f })); }
+          try { moves.push(...await fetchEvm(c, w, { from, to, fetchImpl: f, onTruncated: what => errors.push(`${c} ${what} for ${short(w)} is very long; only the most recent 2,000 were read, so some older purchases may be missing.`) })); }
           catch (e) { errors.push(`${c} history for ${short(w)} could not be read (${(e as Error).message}).`); }
         }
       } else errors.push(`${w} is not a Tron or EVM address.`);
@@ -81,7 +81,7 @@ async function finish(
   };
 
   // Everything before the tax year only builds cost base; only this year's disposals and income count.
-  const all = computeReport(classified.events, { rate, method: inp.method });
+  const all = computeReport(classified.events, { rate, method: inp.method, warnFrom: `${inp.year}-01-01` });
   const y = String(inp.year);
   const report: Report = {
     ...all,

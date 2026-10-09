@@ -42,6 +42,8 @@ export interface Options {
   categoryOf?: (asset: string) => Category;
   /** Capital losses brought forward from earlier years, in naira (para 9.4(7)). */
   lossesBroughtForwardNaira?: number;
+  /** Only warn about missing purchase records for disposals on or after this ISO date (the tax year). */
+  warnFrom?: string;
 }
 
 interface Lot { units: number; usdPerUnit: number; date: string }
@@ -130,7 +132,7 @@ export function computeReport(events: TaxEvent[], opts: Options): Report {
       usdCost = units; // 1 unit = 1 USD of peg
       if (taken.shortfall) usdCost = units;
     }
-    if (taken.shortfall && category !== 2) {
+    if (taken.shortfall && category !== 2 && (!opts.warnFrom || e.date >= opts.warnFrom)) {
       const k = asset.toUpperCase();
       const s0 = shortfalls.get(k) ?? { units: 0, first: e.date, count: 0 };
       s0.units += taken.shortfall; s0.count += 1; shortfalls.set(k, s0);

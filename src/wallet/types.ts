@@ -22,6 +22,8 @@ export interface FetchOptions {
   to?: number;     // unix seconds, inclusive
   maxPages?: number;
   fetchImpl?: typeof fetch;
+  /** Called when history was cut off at maxPages, so the report can say older records were not read. */
+  onTruncated?: (what: string) => void;
 }
 
 export const isoDate = (sec: number) => new Date(sec * 1000).toISOString().slice(0, 10);
