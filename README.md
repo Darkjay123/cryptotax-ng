@@ -2,7 +2,9 @@
 
 Paste a wallet, get your Nigerian crypto and stablecoin tax worked out under the NRS **Guidelines on the Taxation of Virtual Assets** (Information Circular 2026/21, 31 July 2026), in naira, at official CBN rates.
 
-Built for Devcenter Hacktober 2026. Live on Rumpty Cloud.
+**Live:** https://cryptotax-ng.rumptycloud.app · Built for Devcenter Hacktober 2026 on Rumpty Cloud.
+
+Docs: [Architecture](docs/ARCHITECTURE.md) · [Tax rules, paragraph by paragraph](docs/TAX-RULES.md) · [API](docs/API.md)
 
 ## Why
 
@@ -10,7 +12,7 @@ From 1 January 2026 every Nigerian earning income must register, file and keep r
 
 ## What it does
 
-1. Reads your wallet history: Tron (TRC-20 and TRX), Ethereum, Optimism and Gnosis.
+1. Reads your wallet history back to 2020 (so older purchases give a cost base): Tron (TRC-20 and TRX), Ethereum, Optimism and Gnosis.
 2. Values every movement in US dollars (stablecoins at their peg, other tokens at market price on the day).
 3. Converts to naira at the CBN central rate on each transaction date (last published rate on weekends and holidays).
 4. Applies the NRS rules and estimates the extra personal income tax your crypto adds.
@@ -46,17 +48,21 @@ You can relabel anything (payment for work, bought with naira, own wallet, P2P s
 - P2P naira legs happen off-chain: label a send as "Sold for naira" and enter the naira you received.
 - BSC, Base, Arbitrum and Polygon are not read yet (their free explorers block automated access).
 - Unlabelled receipts of non-stablecoins are not taxed until you label them; the app says so.
-- Tokens with no market price (often spam) are left out and counted.
+- Spam and fake tokens (web-address names, emoji, look-alike letters such as "ℰ⊤ℋ" posing as ETH) are left out automatically and counted, so you only label things that matter.
+- Tokens with no market price on the day are left out and counted.
+- Coins that leave a wallet with no recorded purchase are costed at nil (the cautious reading) and flagged, with the fix: add the wallet you bought from, or label the purchase.
 
 ## Run it
 
 ```bash
 npm install
-npm test        # 23 tests
+npm test        # 26 tests
 npm start       # http://localhost:8080
 ```
 
-`POST /api/report` with `{ "wallets": ["T..."], "year": 2026, "labels": {}, "otherIncome": 0 }`.
+`POST /api/report` with `{ "wallets": ["T..."], "year": 2026, "labels": {}, "otherIncome": 0 }`. Big wallets return `202 {"pending":true,"id":"..."}`; poll `GET /api/report/:id`. Details in [docs/API.md](docs/API.md).
+
+Deploy: the `Dockerfile` runs anywhere; on Rumpty Cloud it is a Web Service on port 8080 with health check `/healthz`, redeployed on every push to `main`.
 
 ## License
 
