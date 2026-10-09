@@ -90,7 +90,7 @@ const units = n => n.toLocaleString('en-US', {maximumFractionDigits: 6});
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let labels = {}, last = null, tab = 'review';
 
-const LABELS_IN = [['income:professional','Payment for work'],['income:employment','Salary'],['income:staking','Staking reward'],['income:airdrop','Airdrop'],['income:defi','DeFi yield'],['bought','Bought with naira'],['own_wallet','From my own wallet or exchange'],['gift_in','Gift'],['ignore','Spam, ignore']];
+const LABELS_IN = [['income:professional','Payment for work'],['income:employment','Salary'],['income:staking','Staking reward'],['income:airdrop','Airdrop'],['income:defi','DeFi yield'],['bought','Bought with naira'],['own_wallet','From my own wallet or exchange'],['reimbursement','Refund of money I spent'],['gift_in','Gift'],['ignore','Spam, ignore']];
 const LABELS_OUT = [['payment','Paid for something'],['sold','Sold for naira (P2P)'],['own_wallet','To my own wallet or exchange'],['gift_out','Gift'],['ignore','Spam, ignore']];
 
 function labelKey(l){ if(!l) return ''; return l.kind === 'income' ? 'income:' + l.incomeKind : l.kind; }

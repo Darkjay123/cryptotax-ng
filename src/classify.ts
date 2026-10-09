@@ -14,6 +14,7 @@ export type Label =
   | { kind: 'sold'; naira: number }         // sent after receiving naira (P2P sell)
   | { kind: 'payment' }                     // spent on goods or services (taxable disposal at FMV)
   | { kind: 'gift_in' } | { kind: 'gift_out' }
+  | { kind: 'reimbursement' }               // repays money you spent (not income)
   | { kind: 'ignore' };
 
 export interface Row {
@@ -132,6 +133,9 @@ export function classify(
       case 'bought':
         events.push({ type: 'buy_fiat', id: r.id, date: m.date, asset: m.symbol, unitsNet: m.units, naira: L.naira });
         break;
+      case 'reimbursement':
+        // Repayment of expenses you actually paid is not income. You still own the coins, so they
+        // enter your cost base at market value on the day received (same treatment as a gift in).
       case 'gift_in':
         // Para 7.1 item 15: recipient's cost is market value (s.36(2) NTA); gain deferred to disposal.
         if (r.usd == null) { unpriced.push(r); break; }
