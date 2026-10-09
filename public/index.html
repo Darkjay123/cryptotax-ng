@@ -105,9 +105,10 @@ async function run(ev){
   const wallets = $('#w').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
   const btn = $('#go'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Reading your wallet history…';
   try {
-    let res, j;
+    let res, j, restarted = false;
+    const req = {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({wallets, year:Number($('#y').value), otherIncome: Number(($('#o').value||'').replace(/[^\d.]/g,''))||0, labels})};
     for (let i = 0; i < 8; i++) {
-      res = await fetch('/api/report', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({wallets, year:Number($('#y').value), otherIncome: Number(($('#o').value||'').replace(/[^\d.]/g,''))||0, labels})});
+      res = await fetch('/api/report', req);
       if (res.status !== 503) break;
       await new Promise(r => setTimeout(r, 3000));
     }
@@ -117,8 +118,12 @@ async function run(ev){
     while (res.status === 202 && j.pending && polls++ < 120) {
       btn.innerHTML = `<span class="spin"></span>Still reading a big wallet… ${polls * 3}s`;
       await new Promise(r => setTimeout(r, 3000));
-      res = await fetch('/api/report/' + j.id);
-      j = await res.json().catch(() => ({pending:true, id:j.id}));
+      const id = j.id;
+      res = await fetch('/api/report/' + id);
+      j = await res.json().catch(() => ({pending:true, id}));
+      // The server restarted mid-job (or the job expired): start it again once, keeping the same inputs.
+      if (res.status === 404 && !restarted) { restarted = true; res = await fetch('/api/report', req); j = await res.json().catch(() => ({pending:true, id})); }
+      else if (res.status >= 500) { res = {status:202}; j = {pending:true, id}; }
     }
     if (res.status === 202) throw new Error('This wallet is taking too long to read. Try again in a minute; what was already read is kept.');
     if (!res.ok || j.error) throw new Error(j.error || res.statusText);

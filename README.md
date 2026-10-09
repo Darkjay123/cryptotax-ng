@@ -57,7 +57,7 @@ You can relabel anything (payment for work, bought with naira, own wallet, P2P s
 ```bash
 npm install
 npm test        # 26 tests
-npm start       # http://localhost:8080
+npm run build && npm start   # http://localhost:8080 (or npm run dev)
 ```
 
 `POST /api/report` with `{ "wallets": ["T..."], "year": 2026, "labels": {}, "otherIncome": 0 }`. Big wallets return `202 {"pending":true,"id":"..."}`; poll `GET /api/report/:id`. Details in [docs/API.md](docs/API.md).
