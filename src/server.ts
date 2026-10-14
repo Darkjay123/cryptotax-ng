@@ -91,7 +91,8 @@ app.post('/api/report', async c => {
   const started = Date.now();
   while (!job.done && Date.now() - started < 20_000) await new Promise(r => setTimeout(r, 250));
   if (!job.done) return c.json({ pending: true, id }, 202);
-  return c.json(job.result as object, (job.status ?? 200) as 200);
+  // The page needs the job id for the PDF link, so it rides along on the done response too.
+  return c.json({ ...(job.result as object), id }, (job.status ?? 200) as 200);
 });
 
 async function build(wallets: string[], year: number, labels: Record<string, Label>, other: number, body: any, uploads: { name: string; text: string }[] = []): Promise<{ status: number; body: unknown }> {
