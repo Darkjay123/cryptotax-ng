@@ -50,15 +50,17 @@ export function readQuidax(text: string): QuidaxRead | null {
 
 function parseTime(s: string): { ts: number; date: string } | null {
   const t = s.trim();
+  // dd/mm/yyyy (and friends) must be tried before the loose year-first pattern,
+  // or "14/01/2026" reads as year 14.
+  const m2 = t.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (m2) {
+    const ts = Date.UTC(Number(m2[3]), Number(m2[2]) - 1, Number(m2[1]), Number(m2[4] ?? 0), Number(m2[5] ?? 0), Number(m2[6] ?? 0)) / 1000;
+    if (Number.isFinite(ts)) return { ts, date: new Date(ts * 1000).toISOString().slice(0, 10) };
+  }
   const m = t.match(/^(\d{2,4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
   if (m) {
     let y = Number(m[1]); if (y < 100) y += 2000;
     const ts = Date.UTC(y, Number(m[2]) - 1, Number(m[3]), Number(m[4] ?? 0), Number(m[5] ?? 0), Number(m[6] ?? 0)) / 1000;
-    if (Number.isFinite(ts)) return { ts, date: new Date(ts * 1000).toISOString().slice(0, 10) };
-  }
-  const m2 = t.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
-  if (m2) {
-    const ts = Date.UTC(Number(m2[3]), Number(m2[2]) - 1, Number(m2[1]), Number(m2[4] ?? 0), Number(m2[5] ?? 0), Number(m2[6] ?? 0)) / 1000;
     if (Number.isFinite(ts)) return { ts, date: new Date(ts * 1000).toISOString().slice(0, 10) };
   }
   const n = Date.parse(t);

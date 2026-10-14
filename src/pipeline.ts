@@ -88,8 +88,8 @@ async function loadExchange(files: { name: string; text: string }[], f: typeof f
   for (const f of read.binance.files) if (f.kind !== 'unknown') skipped.delete(f.name);
   for (const file of files) {
     if (!skipped.has(file.name)) continue;
-    if (detectBybit(file.text)) { const r = readBybit(file.text); if (r) { read.bybit.push({ ...r, name: file.name }); skipped.delete(file.name); } }
-    else if (detectQuidax(file.text)) { const r = readQuidax(file.text); if (r) { read.quidax.push({ ...r, name: file.name }); skipped.delete(file.name); } }
+    if (detectBybit(file.text)) { const r = readBybit(file.text); if (r) { r.files.forEach(f => f.name = file.name); read.bybit.push({ ...r, name: file.name }); skipped.delete(file.name); } }
+    else if (detectQuidax(file.text)) { const r = readQuidax(file.text); if (r) { r.files.forEach(f => f.name = file.name); read.quidax.push({ ...r, name: file.name }); skipped.delete(file.name); } }
   }
   const allLegs = [...read.binance.legs, ...read.bybit.flatMap(b => b.legs), ...read.quidax.flatMap(q => q.legs)];
   const prices = await loadPrices(priceNeeds(allLegs), f);
@@ -105,19 +105,31 @@ async function finish(
   const rates = await loadRates(f);
   const price = priceFn(prices);
   const pf = ex ? priceFn(ex.prices) : null;
+  // Quidax splits its naira and crypto statements into two files; they only make
+  // sense together, so all Quidax files are merged into one read before building.
+  const quidaxAll = ex && ex.read.quidax.length ? {
+    legs: ex.read.quidax.flatMap(q => q.legs),
+    nairaLegs: ex.read.quidax.flatMap(q => q.nairaLegs),
+    files: ex.read.quidax.flatMap(q => q.files),
+    notes: ex.read.quidax.flatMap(q => q.notes),
+    name: ex.read.quidax[0]?.name ?? '',
+  } : null;
   const built = ex && pf ? [
     buildBinance(ex.read.binance, pf),
     ...ex.read.bybit.map(b => buildBybit(b, pf, b.name ?? '')),
-    ...ex.read.quidax.map(q => buildQuidax(q, pf, q.name ?? '')),
+    ...(quidaxAll ? [buildQuidax(quidaxAll, pf, quidaxAll.name ?? '')] : []),
   ] : [];
   const imports: ExchangeImport[] = built.filter(Boolean) as ExchangeImport[];
+  // The Binance reader marks files it does not recognise as "unknown"; when another
+  // reader handled that same upload, drop the confusing duplicate entry.
+  const handled = new Set(imports.flatMap(x => x.files).filter(f => f.kind !== 'unknown').map(f => f.name));
   const merged: ExchangeImport | null = imports.length ? {
     events: imports.flatMap(x => x.events),
     items: imports.flatMap(x => x.items),
     withdrawals: imports.flatMap(x => x.withdrawals),
     deposits: imports.flatMap(x => x.deposits),
     notes: imports.flatMap(x => x.notes),
-    files: imports.flatMap(x => x.files),
+    files: imports.flatMap(x => x.files).filter(f => f.kind !== 'unknown' || !handled.has(f.name)),
   } : null;
   const hints = merged ? matchTransfers(moves, merged) : new Map<number, string>();
   const classified = classify(moves, price, inp.wallets, inp.labels, hints);

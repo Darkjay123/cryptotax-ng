@@ -55,16 +55,15 @@ export function readBybit(text: string): BybitRead | null {
 
 function parseBybitTime(s: string): { ts: number; date: string } | null {
   const t = s.trim();
+  const m2 = t.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (m2) {
+    const ts = Date.UTC(Number(m2[3]), Number(m2[2]) - 1, Number(m2[1]), Number(m2[4] ?? 0), Number(m2[5] ?? 0), Number(m2[6] ?? 0)) / 1000;
+    if (Number.isFinite(ts)) return { ts, date: new Date(ts * 1000).toISOString().slice(0, 10) };
+  }
   const m = t.match(/^(\d{2,4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
   if (m) {
     let y = Number(m[1]); if (y < 100) y += 2000;
     const ts = Date.UTC(y, Number(m[2]) - 1, Number(m[3]), Number(m[4] ?? 0), Number(m[5] ?? 0), Number(m[6] ?? 0)) / 1000;
-    if (Number.isFinite(ts)) return { ts, date: new Date(ts * 1000).toISOString().slice(0, 10) };
-  }
-  // Try "2026-01-30 12:34" style failed above; also accept dd/mm/yyyy hh:mm:ss.
-  const m2 = t.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
-  if (m2) {
-    const ts = Date.UTC(Number(m2[3]), Number(m2[2]) - 1, Number(m2[1])) / 1000;
     if (Number.isFinite(ts)) return { ts, date: new Date(ts * 1000).toISOString().slice(0, 10) };
   }
   const n = Date.parse(t);
