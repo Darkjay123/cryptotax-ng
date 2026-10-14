@@ -50,9 +50,16 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
   const f = inp.fetchImpl ?? fetch;
   const cacheKey = [inp.year, ...[...inp.wallets].sort(), ...(inp.chains ?? [])].join('|');
   const pdfParts = await readPdfs(inp.exchangePdfs ?? []);
+  // A PDF that could not be read still owes the user an explanation, even when
+  // it is the only upload and no exchange panel is built.
+  const pdfFailNotes = [...pdfParts.info.values()].filter(st => !st.csv && st.notes.length).flatMap(st => st.notes);
   const ex = await loadExchange([...(inp.exchangeFiles ?? []), ...pdfParts.files], f, pdfParts.info);
   const hit = historyCache.get(cacheKey);
-  if (hit && Date.now() - hit.at < HISTORY_TTL) return finish(inp, hit.moves, hit.prices, [...hit.errors], f, ex);
+  if (hit && Date.now() - hit.at < HISTORY_TTL) {
+    const out = await finish(inp, hit.moves, hit.prices, [...hit.errors], f, ex);
+    if (pdfFailNotes.length) out.errors.push(...pdfFailNotes);
+    return out;
+  }
   // Read back to 2020 so older purchases give a cost base for this year's sales (para 9.3).
   const from = Date.UTC(2020, 0, 1) / 1000;
   const to = Math.min(Date.UTC(inp.year, 11, 31, 23, 59, 59) / 1000, Math.floor(Date.now() / 1000));
@@ -75,7 +82,9 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
   const prices = await loadPrices(moves, f);
   if (historyCache.size > 300) historyCache.clear();
   historyCache.set(cacheKey, { at: Date.now(), moves, errors: [...errors], prices });
-  return finish(inp, moves, prices, errors, f, ex);
+  const out = await finish(inp, moves, prices, errors, f, ex);
+  if (pdfFailNotes.length) out.errors.push(...pdfFailNotes);
+  return out;
 }
 
 // Parsed exchange files and their coin prices, cached by file contents for relabelling.
