@@ -13,6 +13,7 @@ import type { ChainId, Movement } from './wallet/types.js';
 import { buildBinance, ExchangeImport, matchTransfers, priceNeeds, readBinanceFiles } from './exchange/binance.js';
 import { buildBybit, detectBybit, readBybit } from './exchange/bybit.js';
 import { buildQuidax, detectQuidax, readQuidax } from './exchange/quidax.js';
+import { parseStatementPdf, PdfStatement } from './exchange/pdfimport.js';
 import { createHash } from 'node:crypto';
 
 export interface PipelineInput {
@@ -22,6 +23,8 @@ export interface PipelineInput {
   labels?: Record<string, Label>;
   /** Exchange exports the user uploaded (Binance Transaction History / P2P Order History CSV). */
   exchangeFiles?: { name: string; text: string }[];
+  /** Exchange statements uploaded as PDF (base64); parsed into the same reader shapes. */
+  exchangePdfs?: { name: string; b64: string }[];
   otherChargeableNaira?: number;
   method?: 'FIFO' | 'WAC';
   fetchImpl?: typeof fetch;
@@ -46,7 +49,8 @@ const HISTORY_TTL = 20 * 60_000;
 export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
   const f = inp.fetchImpl ?? fetch;
   const cacheKey = [inp.year, ...[...inp.wallets].sort(), ...(inp.chains ?? [])].join('|');
-  const ex = await loadExchange(inp.exchangeFiles ?? [], f);
+  const pdfParts = await readPdfs(inp.exchangePdfs ?? []);
+  const ex = await loadExchange([...(inp.exchangeFiles ?? []), ...pdfParts.files], f, pdfParts.info);
   const hit = historyCache.get(cacheKey);
   if (hit && Date.now() - hit.at < HISTORY_TTL) return finish(inp, hit.moves, hit.prices, [...hit.errors], f, ex);
   // Read back to 2020 so older purchases give a cost base for this year's sales (para 9.3).
@@ -75,9 +79,24 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
 }
 
 // Parsed exchange files and their coin prices, cached by file contents for relabelling.
-type ExData = { read: { binance: ReturnType<typeof readBinanceFiles>; bybit: NonNullable<ReturnType<typeof readBybit>>[]; quidax: NonNullable<ReturnType<typeof readQuidax>>[] }; prices: Map<string, number | null> } | null;
+type ExData = { read: { binance: ReturnType<typeof readBinanceFiles>; bybit: NonNullable<ReturnType<typeof readBybit>>[]; quidax: NonNullable<ReturnType<typeof readQuidax>>[] }; prices: Map<string, number | null>; pdfInfo: Map<string, PdfStatement> } | null;
+
+/** Parses uploaded PDF statements into the CSV shape their reader already knows. */
+async function readPdfs(pdfs: { name: string; b64: string }[]): Promise<{ files: { name: string; text: string }[]; info: Map<string, PdfStatement> }> {
+  const files: { name: string; text: string }[] = [];
+  const info = new Map<string, PdfStatement>();
+  for (const p of pdfs) {
+    const b64 = p.b64.replace(/^data:application\/pdf;base64,/, '');
+    let bytes: Uint8Array;
+    try { bytes = new Uint8Array(Buffer.from(b64, 'base64')); } catch { continue; }
+    const st = await parseStatementPdf(p.name, bytes);
+    info.set(p.name, st);
+    if (st.csv) files.push({ name: p.name, text: st.csv });
+  }
+  return { files, info };
+}
 const exCache = new Map<string, { at: number; data: ExData }>();
-async function loadExchange(files: { name: string; text: string }[], f: typeof fetch): Promise<ExData> {
+async function loadExchange(files: { name: string; text: string }[], f: typeof fetch, pdfInfo: Map<string, PdfStatement> = new Map()): Promise<ExData> {
   if (!files.length) return null;
   const key = createHash('sha256').update(JSON.stringify(files.map(x => x.text))).digest('hex');
   const hit = exCache.get(key);
@@ -88,12 +107,12 @@ async function loadExchange(files: { name: string; text: string }[], f: typeof f
   for (const f of read.binance.files) if (f.kind !== 'unknown') skipped.delete(f.name);
   for (const file of files) {
     if (!skipped.has(file.name)) continue;
-    if (detectBybit(file.text)) { const r = readBybit(file.text); if (r) { r.files.forEach(f => f.name = file.name); read.bybit.push({ ...r, name: file.name }); skipped.delete(file.name); } }
+    if (detectBybit(file.text)) { const r = readBybit(file.text); if (r) { r.files.forEach(f => f.name = file.name); const st = pdfInfo.get(file.name); if (st) r.sourceName = st.exchange; read.bybit.push({ ...r, name: file.name }); skipped.delete(file.name); } }
     else if (detectQuidax(file.text)) { const r = readQuidax(file.text); if (r) { r.files.forEach(f => f.name = file.name); read.quidax.push({ ...r, name: file.name }); skipped.delete(file.name); } }
   }
   const allLegs = [...read.binance.legs, ...read.bybit.flatMap(b => b.legs), ...read.quidax.flatMap(q => q.legs)];
   const prices = await loadPrices(priceNeeds(allLegs), f);
-  const data = { read, prices };
+  const data = { read, prices, pdfInfo };
   if (exCache.size > 100) exCache.clear();
   exCache.set(key, { at: Date.now(), data });
   return data;
@@ -116,7 +135,7 @@ async function finish(
   } : null;
   const built = ex && pf ? [
     buildBinance(ex.read.binance, pf),
-    ...ex.read.bybit.map(b => buildBybit(b, pf, b.name ?? '')),
+    ...ex.read.bybit.map(b => buildBybit(b, pf, b.name ?? '', b.sourceName)),
     ...(quidaxAll ? [buildQuidax(quidaxAll, pf, quidaxAll.name ?? '')] : []),
   ] : [];
   const imports: ExchangeImport[] = built.filter(Boolean) as ExchangeImport[];
@@ -131,6 +150,15 @@ async function finish(
     notes: imports.flatMap(x => x.notes),
     files: imports.flatMap(x => x.files).filter(f => f.kind !== 'unknown' || !handled.has(f.name)),
   } : null;
+  if (merged && ex) {
+    // PDFs read through the standard readers still carry their own file label.
+    for (const fe of merged.files) {
+      const st = ex.pdfInfo.get(fe.name);
+      if (st) fe.kind = st.detected === 'binance_transactions' ? 'binance_pdf' : st.detected === 'binance_p2p' ? 'binance_p2p_pdf'
+        : st.detected === 'quidax' ? 'quidax_pdf' : st.detected === 'bybit' ? 'bybit_pdf' : 'pdf_generic';
+    }
+    for (const [n, st] of ex.pdfInfo) if (st.notes.length) merged.notes.push(...st.notes.map(t => `${n}: ${t}`));
+  }
   const hints = merged ? matchTransfers(moves, merged) : new Map<number, string>();
   const classified = classify(moves, price, inp.wallets, inp.labels, hints);
   if (merged) classified.events.push(...merged.events);

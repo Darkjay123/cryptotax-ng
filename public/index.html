@@ -60,9 +60,9 @@ footer{margin-top:40px;color:var(--mute);font-size:13px}
 <form id="f" class="card">
   <label for="w">Your wallet addresses (one per line, up to 5). Tron (T…) and Ethereum, Optimism or Gnosis (0x…).</label>
   <textarea id="w" placeholder="TXyz… or 0xabc…" spellcheck="false"></textarea>
-  <label for="files" style="margin-top:12px">Binance statements (optional): Transaction History and P2P Order History, saved as CSV</label>
-  <input id="files" type="file" accept=".csv,text/csv" multiple>
-  <div class="hint">On Binance: Wallet → Transaction History → Export, and P2P → Orders → Export. With these we use the naira you actually paid and received on P2P, and spot when a wallet deposit was just you withdrawing from Binance. Files are read for this report only and not stored.</div>
+  <label for="files" style="margin-top:12px">Exchange statements (optional): CSV or PDF from Binance, Bybit, Quidax, Busha, Luno, Bitnob and others</label>
+  <input id="files" type="file" accept=".csv,text/csv,.pdf,application/pdf" multiple>
+  <div class="hint">On Binance: Wallet → Transaction History → Export (CSV or PDF), and P2P → Orders → Export. Quidax and Busha statements from the app work too; a PDF layout we do not know yet is read best-effort and anything unclear lands in the review list, never guessed. Files are read for this report only and not stored.</div>
   <div class="row">
     <div><label for="y">Tax year</label><select id="y"><option>2026</option><option>2025</option></select></div>
     <div><label for="o">Other taxable income this year in ₦ (optional)</label><input id="o" inputmode="numeric" placeholder="e.g. 2400000"></div>
@@ -93,10 +93,20 @@ const units = n => n.toLocaleString('en-US', {maximumFractionDigits: 6});
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let labels = {}, last = null, tab = 'review';
 
-let uploads = [], notes = {}, reads = {};
+let uploads = [], pdfs = [], notes = {}, reads = {};
 async function readFiles(){
   const fs = [...($('#files').files || [])];
-  uploads = await Promise.all(fs.map(f => f.text().then(text => ({name: f.name, text}))));
+  uploads = []; pdfs = [];
+  for (const f of fs) {
+    if (/\.pdf$/i.test(f.name)) {
+      const buf = new Uint8Array(await f.arrayBuffer());
+      let bin = '';
+      for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+      pdfs.push({ name: f.name, b64: btoa(bin) });
+    } else {
+      uploads.push({ name: f.name, text: await f.text() });
+    }
+  }
 }
 
 const LABELS_IN = [['income:professional','Payment for work'],['income:employment','Salary'],['income:staking','Staking reward'],['income:airdrop','Airdrop'],['income:defi','DeFi yield'],['bought','Bought with naira'],['own_wallet','From my own wallet or exchange'],['reimbursement','Refund of money I spent'],['gift_in','Gift'],['ignore','Spam, ignore']];
@@ -116,7 +126,7 @@ async function run(ev){
   const btn = $('#go'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Reading your wallet history…';
   try {
     let res, j, restarted = false;
-    const req = {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({wallets, uploads, year:Number($('#y').value), otherIncome: Number(($('#o').value||'').replace(/[^\d.]/g,''))||0, labels})};
+    const req = {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({wallets, uploads, pdfs, year:Number($('#y').value), otherIncome: Number(($('#o').value||'').replace(/[^\d.]/g,''))||0, labels})};
     for (let i = 0; i < 8; i++) {
       res = await fetch('/api/report', req);
       if (res.status !== 503) break;

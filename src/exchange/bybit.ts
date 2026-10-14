@@ -33,7 +33,7 @@ function classifyType(t: string): { cls: 'trade' | 'deposit' | 'withdraw' | 'rew
   return { cls: 'unknown' };
 }
 
-export interface BybitRead { legs: Leg[]; files: ExchangeImport['files']; notes: string[]; name?: string }
+export interface BybitRead { legs: Leg[]; files: ExchangeImport['files']; notes: string[]; name?: string; sourceName?: string }
 export function readBybit(text: string): BybitRead | null {
   const rows = parseCsv(text);
   if (!rows.length) return null;
@@ -71,7 +71,8 @@ function parseBybitTime(s: string): { ts: number; date: string } | null {
   return null;
 }
 
-export function buildBybit(read: NonNullable<ReturnType<typeof readBybit>>, price: PriceFn, fileName: string): ExchangeImport {
+export function buildBybit(read: NonNullable<ReturnType<typeof readBybit>>, price: PriceFn, fileName: string, sourceName0 = 'Bybit'): ExchangeImport {
+  const sourceName = read.sourceName ?? sourceName0;
   const files = read.files.map(f => ({ ...f, name: f.name || fileName }));
   const events: TaxEvent[] = [], items: ExchangeItem[] = [], withdrawals: Transfer[] = [], deposits: Transfer[] = [];
   const notes = [...read.notes];
@@ -92,26 +93,26 @@ export function buildBybit(read: NonNullable<ReturnType<typeof readBybit>>, pric
       case 'trade': { groups.set(`${l.ts}|${l.account}`, [...(groups.get(`${l.ts}|${l.account}`) ?? []), l]); continue; }
       case 'deposit':
         deposits.push({ date: l.date, ts: l.ts, symbol: l.coin, units });
-        items.push({ id: i, date: l.date, source: 'Bybit', kind: 'deposit', text: `Deposited ${fmt(units)} ${l.coin} to Bybit. Treated as a move between your own accounts (not taxable, para 7.2.2).` });
+        items.push({ id: i, date: l.date, source: sourceName, kind: 'deposit', text: `Deposited ${fmt(units)} ${l.coin} to Bybit. Treated as a move between your own accounts (not taxable, para 7.2.2).` });
         break;
       case 'withdraw':
         withdrawals.push({ date: l.date, ts: l.ts, symbol: l.coin, units });
-        items.push({ id: i, date: l.date, source: 'Bybit', kind: 'withdraw', text: `Withdrew ${fmt(units)} ${l.coin} from Bybit. Treated as a move to your own wallet (not taxable, para 7.2.2).` });
+        items.push({ id: i, date: l.date, source: sourceName, kind: 'withdraw', text: `Withdrew ${fmt(units)} ${l.coin} from Bybit. Treated as a move to your own wallet (not taxable, para 7.2.2).` });
         break;
       case 'reward': {
         if (l.change <= 0) break;
         const u = usdOf(l.coin, units, l.ts, l.date);
-        if (u == null) { items.push({ id: i, date: l.date, source: 'Bybit', kind: 'reward', text: `${l.op}: ${fmt(units)} ${l.coin}`, review: 'No market price for this coin on that day, so it is not counted.' }); break; }
+        if (u == null) { items.push({ id: i, date: l.date, source: sourceName, kind: 'reward', text: `${l.op}: ${fmt(units)} ${l.coin}`, review: 'No market price for this coin on that day, so it is not counted.' }); break; }
         events.push({ type: 'income', id: i, kind: c.incomeKind ?? 'other', date: l.date, asset: l.coin, units, usdFmv: u });
-        items.push({ id: i, date: l.date, source: 'Bybit', kind: 'reward', text: `${l.op}: ${fmt(units)} ${l.coin}, taxed as income on the day received (para 7.1).` });
+        items.push({ id: i, date: l.date, source: sourceName, kind: 'reward', text: `${l.op}: ${fmt(units)} ${l.coin}, taxed as income on the day received (para 7.1).` });
         break;
       }
       case 'p2p':
-        items.push({ id: i, date: l.date, source: 'Bybit', kind: l.change > 0 ? 'p2p_buy' : 'p2p_sell', text: `${l.op}: ${l.change > 0 ? '+' : ''}${fmt(l.change)} ${l.coin}`, review: 'The naira side of this P2P trade is not in a Bybit export. If you were paid in naira, add it under "Sold for naira (P2P)" or tell us the naira value.' });
+        items.push({ id: i, date: l.date, source: sourceName, kind: l.change > 0 ? 'p2p_buy' : 'p2p_sell', text: `${l.op}: ${l.change > 0 ? '+' : ''}${fmt(l.change)} ${l.coin}`, review: 'The naira side of this P2P trade is not in a Bybit export. If you were paid in naira, add it under "Sold for naira (P2P)" or tell us the naira value.' });
         break;
       case 'internal': break;
       default:
-        items.push({ id: i, date: l.date, source: 'Bybit', kind: 'unknown', text: `${l.op || 'Unlabelled'}: ${l.change > 0 ? '+' : ''}${fmt(l.change)} ${l.coin}`, review: 'We do not recognise this Bybit operation yet, so it is not counted. Tell us what it was.' });
+        items.push({ id: i, date: l.date, source: sourceName, kind: 'unknown', text: `${l.op || 'Unlabelled'}: ${l.change > 0 ? '+' : ''}${fmt(l.change)} ${l.coin}`, review: 'We do not recognise this Bybit operation yet, so it is not counted. Tell us what it was.' });
     }
   }
   for (const g of groups.values()) {
@@ -121,17 +122,17 @@ export function buildBybit(read: NonNullable<ReturnType<typeof readBybit>>, pric
     const { ts, date } = g[0];
     const i = id();
     if (outs.length !== 1 || ins.length !== 1) {
-      items.push({ id: i, date, source: 'Bybit', kind: 'trade', text: `Trade with ${g.length} lines: ${[...net].map(([c, v]) => `${v > 0 ? '+' : ''}${fmt(v)} ${c}`).join(', ')}`, review: 'We could not tell what was given and what was received here, so it is not counted.' });
+      items.push({ id: i, date, source: sourceName, kind: 'trade', text: `Trade with ${g.length} lines: ${[...net].map(([c, v]) => `${v > 0 ? '+' : ''}${fmt(v)} ${c}`).join(', ')}`, review: 'We could not tell what was given and what was received here, so it is not counted.' });
       continue;
     }
     const [outC, outV] = outs[0], [inC, inV] = ins[0];
     const unitsOut = -outV, unitsIn = inV;
-    if (outC === 'NGN') { events.push({ type: 'buy_fiat', id: i, date, asset: inC, unitsNet: unitsIn, naira: unitsOut }); items.push({ id: i, date, source: 'Bybit', kind: 'trade', text: `Bought ${fmt(unitsIn)} ${inC} for naira ${fmt(unitsOut)}` }); continue; }
-    if (inC === 'NGN') { events.push({ type: 'sell_fiat', id: i, date, asset: outC, units: unitsOut, naira: unitsIn }); items.push({ id: i, date, source: 'Bybit', kind: 'trade', text: `Sold ${fmt(unitsOut)} ${outC} for naira ${fmt(unitsIn)}` }); continue; }
+    if (outC === 'NGN') { events.push({ type: 'buy_fiat', id: i, date, asset: inC, unitsNet: unitsIn, naira: unitsOut }); items.push({ id: i, date, source: sourceName, kind: 'trade', text: `Bought ${fmt(unitsIn)} ${inC} for naira ${fmt(unitsOut)}` }); continue; }
+    if (inC === 'NGN') { events.push({ type: 'sell_fiat', id: i, date, asset: outC, units: unitsOut, naira: unitsIn }); items.push({ id: i, date, source: sourceName, kind: 'trade', text: `Sold ${fmt(unitsOut)} ${outC} for naira ${fmt(unitsIn)}` }); continue; }
     const fmv = usdOf(outC, unitsOut, ts, date) ?? usdOf(inC, unitsIn, ts, date);
-    if (fmv == null) { items.push({ id: i, date, source: 'Bybit', kind: 'trade', text: `Swapped ${fmt(unitsOut)} ${outC} for ${fmt(unitsIn)} ${inC}`, review: 'Neither coin had a market price that day, so this is not counted.' }); continue; }
+    if (fmv == null) { items.push({ id: i, date, source: sourceName, kind: 'trade', text: `Swapped ${fmt(unitsOut)} ${outC} for ${fmt(unitsIn)} ${inC}`, review: 'Neither coin had a market price that day, so this is not counted.' }); continue; }
     events.push({ type: 'swap', id: i, date, assetOut: outC, unitsOut, assetIn: inC, unitsIn, usdFmvOut: fmv });
-    items.push({ id: i, date, source: 'Bybit', kind: 'trade', text: `Swapped ${fmt(unitsOut)} ${outC} for ${fmt(unitsIn)} ${inC} (worth $${fmv.toFixed(2)}), a disposal of ${outC} (para 9.3.2).` });
+    items.push({ id: i, date, source: sourceName, kind: 'trade', text: `Swapped ${fmt(unitsOut)} ${outC} for ${fmt(unitsIn)} ${inC} (worth $${fmv.toFixed(2)}), a disposal of ${outC} (para 9.3.2).` });
   }
   items.sort((a, b) => a.date.localeCompare(b.date));
   return { events, items, withdrawals, deposits, notes, files };

@@ -6,6 +6,25 @@ Paste a wallet, get your Nigerian crypto and stablecoin tax worked out under the
 
 Docs: [Architecture](docs/ARCHITECTURE.md) · [Tax rules, paragraph by paragraph](docs/TAX-RULES.md) · [API](docs/API.md)
 
+## Any exchange statement, CSV or PDF
+
+Upload a wallet plus up to six statements. CSVs from Binance (Transaction History
+and P2P Order History), Bybit and Quidax are read exactly as before. PDFs now work
+too: a PDF statement from any exchange or on/off-ramp (Binance's app statement,
+Bybit, Quidax, Busha, Luno, Bitnob, Yellow Card, Breet, Apexpay and others) is
+reconstructed into the same table the matching reader already understands, so every
+tax rule stays in the tested readers and nothing about the PDF is trusted.
+
+- Known layouts (Binance Transaction History, Binance P2P orders, Bybit transaction
+  logs, Quidax debit/credit statements) are read exactly, like their CSVs.
+- Unknown layouts are read as a generic statement under the exchange's own name
+  (detected from the document or file name), with unclear rows listed for review.
+- Rows that fail to read are reported, never guessed. Cancelled, failed and
+  reversed rows are skipped. Scanned-image PDFs (no text layer) are refused with a
+  plain note to export a CSV instead.
+- Files are read for the report only and never stored.
+
+
 ## Why
 
 From 1 January 2026 every Nigerian earning income must register, file and keep records, and on 31 July 2026 the Nigeria Revenue Service published how crypto is taxed. Nigeria received $92.1 billion in crypto between July 2024 and June 2025 (Chainalysis), much of it freelancers paid in USDT. The first returns under the new rules are due **31 March 2027**. The free calculators we tested still apply the old 10% capital gains tax that the Nigeria Tax Act 2025 abolished.

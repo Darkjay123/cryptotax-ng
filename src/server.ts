@@ -69,9 +69,13 @@ app.post('/api/report', async c => {
   const uploads: { name: string; text: string }[] = (Array.isArray(body.uploads) ? body.uploads : [])
     .filter((u: any) => u && typeof u.text === 'string')
     .map((u: any) => ({ name: String(u.name ?? 'file.csv').slice(0, 200), text: u.text as string }));
-  if (uploads.length > 6) return c.json({ error: 'Upload up to 6 files.' }, 400);
-  if (uploads.reduce((s, u) => s + u.text.length, 0) > 2_600_000) return c.json({ error: 'Statements are too big (over 2.5 MB). Export a shorter date range.' }, 413);
-  if (!wallets.length && !uploads.length) return c.json({ error: 'Add a wallet address or upload a Binance statement.' }, 400);
+  const pdfs: { name: string; b64: string }[] = (Array.isArray(body.pdfs) ? body.pdfs : [])
+    .filter((p: any) => p && typeof p.b64 === 'string' && p.b64.length > 100)
+    .map((p: any) => ({ name: String(p.name ?? 'statement.pdf').slice(0, 200), b64: String(p.b64) }));
+  if (uploads.length + pdfs.length > 6) return c.json({ error: 'Upload up to 6 files.' }, 400);
+  const pdfDecoded = pdfs.reduce((s, p) => s + Math.floor((p.b64.length * 3) / 4), 0);
+  if (uploads.reduce((s, u) => s + u.text.length, 0) + pdfDecoded > 2_600_000) return c.json({ error: 'Statements are too big (over 2.5 MB in total). Export a shorter date range.' }, 413);
+  if (!wallets.length && !uploads.length && !pdfs.length) return c.json({ error: 'Add a wallet address or upload an exchange statement (CSV or PDF).' }, 400);
   if (wallets.length > 5) return c.json({ error: 'Up to 5 wallets per report.' }, 400);
   const bad = wallets.filter(w => !isTronAddress(w) && !isEvmAddress(w));
   if (bad.length) return c.json({ error: `Not a Tron (T…) or EVM (0x…) address: ${bad.join(', ')}` }, 400);
@@ -79,14 +83,14 @@ app.post('/api/report', async c => {
   if (![2025, 2026].includes(year)) return c.json({ error: 'Year must be 2025 or 2026.' }, 400);
   const labels = (body.labels && typeof body.labels === 'object') ? body.labels as Record<string, Label> : {};
   const other = Math.max(0, Number(body.otherIncome ?? 0) || 0);
-  const id = createHash('sha256').update(JSON.stringify([wallets.slice().sort(), year, labels, other, body.method, uploads.map(u => u.text)])).digest('hex').slice(0, 24);
+  const id = createHash('sha256').update(JSON.stringify([wallets.slice().sort(), year, labels, other, body.method, uploads.map(u => u.text), pdfs.map(p => p.b64)])).digest('hex').slice(0, 24);
   sweepJobs();
   let job = jobs.get(id);
   if (!job || (job.done && job.status !== 200)) {
     job = { at: Date.now(), done: false };
     jobs.set(id, job);
     const j = job;
-    build(wallets, year, labels, other, body, uploads).then(r => { j.result = r.body; j.status = r.status; j.done = true; });
+    build(wallets, year, labels, other, body, uploads, pdfs).then(r => { j.result = r.body; j.status = r.status; j.done = true; });
   }
   const started = Date.now();
   while (!job.done && Date.now() - started < 20_000) await new Promise(r => setTimeout(r, 250));
@@ -95,9 +99,9 @@ app.post('/api/report', async c => {
   return c.json({ ...(job.result as object), id }, (job.status ?? 200) as 200);
 });
 
-async function build(wallets: string[], year: number, labels: Record<string, Label>, other: number, body: any, uploads: { name: string; text: string }[] = []): Promise<{ status: number; body: unknown }> {
+async function build(wallets: string[], year: number, labels: Record<string, Label>, other: number, body: any, uploads: { name: string; text: string }[] = [], pdfs: { name: string; b64: string }[] = []): Promise<{ status: number; body: unknown }> {
   try {
-    const out = await runPipeline({ wallets, year, labels, otherChargeableNaira: other, method: body.method === 'WAC' ? 'WAC' : 'FIFO', exchangeFiles: uploads });
+    const out = await runPipeline({ wallets, year, labels, otherChargeableNaira: other, method: body.method === 'WAC' ? 'WAC' : 'FIFO', exchangeFiles: uploads, exchangePdfs: pdfs });
     const inYear = (d: string) => d.startsWith(String(year));
     return { status: 200, body: {
       year,
