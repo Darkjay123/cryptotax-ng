@@ -17,7 +17,7 @@ import type { PriceFn } from '../prices.js';
 import { num, parseCsv } from './csv.js';
 
 export interface ExchangeItem {
-  id: string; date: string; source: 'Binance'; kind: ExKind;
+  id: string; date: string; source: 'Binance' | 'Bybit' | 'Quidax'; kind: ExKind;
   text: string;          // plain-English description
   review?: string;       // why it needs the user, if it does
 }
@@ -31,10 +31,10 @@ export interface ExchangeImport {
   withdrawals: Transfer[];  // left Binance (may arrive in the user's wallet)
   deposits: Transfer[];     // arrived on Binance (may have left the user's wallet)
   notes: string[];
-  files: { name: string; kind: 'binance_transactions' | 'binance_p2p' | 'unknown'; rows: number }[];
+  files: { name: string; kind: 'binance_transactions' | 'binance_p2p' | 'bybit_transactions' | 'quidax_statement' | 'unknown'; rows: number }[];
 }
 
-interface Leg { ts: number; date: string; op: string; coin: string; change: number; account: string; remark: string }
+export interface Leg { ts: number; date: string; op: string; coin: string; change: number; account: string; remark: string }
 interface P2P { ts: number; date: string; side: 'buy' | 'sell'; asset: string; fiat: string; total: number; qty: number; fee: number; order: string }
 
 const COINGECKO: Record<string, string> = {

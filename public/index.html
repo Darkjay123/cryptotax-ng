@@ -194,7 +194,7 @@ function render(){
         <div class="why">${esc(r.reason)}</div></td></tr>`;
     }
     h += `</table>${j.rows.length>400?'<div class="hint">Showing the first 400.</div>':''}
-      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="ghost" id="recalc">Recalculate</button><button class="ghost" id="csv">Download CSV</button></div>`;
+      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="ghost" id="recalc">Recalculate</button><button class="ghost" id="csv">Download CSV</button><button class="ghost" id="pdf">Download filing PDF</button></div>`;
   } else if (tab === 'income') {
     h += `<table><tr><th>Date</th><th>Received</th><th>Type</th><th>Dollar value</th><th>CBN rate</th><th>Taxable ₦</th></tr>`;
     for (const i of j.income) h += `<tr><td>${i.date}</td><td>${units(i.units)} ${esc(i.asset)}</td><td>${esc(i.kind)}</td><td>${usd(i.usdFmv)}</td><td>${i.rate}</td><td>${ngn(i.naira)}</td></tr>`;
@@ -236,6 +236,7 @@ function render(){
   });
   $('#recalc') && ($('#recalc').onclick = run);
   $('#csv') && ($('#csv').onclick = csv);
+  $('#pdf') && ($('#pdf').onclick = () => window.open('/api/report/' + (last && last.id) + '/pdf', '_blank'));
 }
 
 function csv(){

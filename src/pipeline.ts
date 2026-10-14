@@ -11,6 +11,8 @@ import { fetchTron, isTronAddress } from './wallet/tron.js';
 import { EVM_CHAINS, fetchEvm, isEvmAddress } from './wallet/evm.js';
 import type { ChainId, Movement } from './wallet/types.js';
 import { buildBinance, ExchangeImport, matchTransfers, priceNeeds, readBinanceFiles } from './exchange/binance.js';
+import { buildBybit, detectBybit, readBybit } from './exchange/bybit.js';
+import { buildQuidax, detectQuidax, readQuidax } from './exchange/quidax.js';
 import { createHash } from 'node:crypto';
 
 export interface PipelineInput {
@@ -73,15 +75,24 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
 }
 
 // Parsed exchange files and their coin prices, cached by file contents for relabelling.
-type ExData = { read: ReturnType<typeof readBinanceFiles>; prices: Map<string, number | null> } | null;
+type ExData = { read: { binance: ReturnType<typeof readBinanceFiles>; bybit: NonNullable<ReturnType<typeof readBybit>>[]; quidax: NonNullable<ReturnType<typeof readQuidax>>[] }; prices: Map<string, number | null> } | null;
 const exCache = new Map<string, { at: number; data: ExData }>();
 async function loadExchange(files: { name: string; text: string }[], f: typeof fetch): Promise<ExData> {
   if (!files.length) return null;
   const key = createHash('sha256').update(JSON.stringify(files.map(x => x.text))).digest('hex');
   const hit = exCache.get(key);
   if (hit && Date.now() - hit.at < HISTORY_TTL) return hit.data;
-  const read = readBinanceFiles(files);
-  const prices = await loadPrices(priceNeeds(read.legs), f);
+  const read = { binance: readBinanceFiles(files), bybit: [] as NonNullable<ReturnType<typeof readBybit>>[], quidax: [] as NonNullable<ReturnType<typeof readQuidax>>[] };
+  const names = new Map(files.map(f => [f.text, f.name]));
+  const skipped = new Set(files.map(f => f.name));
+  for (const f of read.binance.files) if (f.kind !== 'unknown') skipped.delete(f.name);
+  for (const file of files) {
+    if (!skipped.has(file.name)) continue;
+    if (detectBybit(file.text)) { const r = readBybit(file.text); if (r) { read.bybit.push({ ...r, name: file.name }); skipped.delete(file.name); } }
+    else if (detectQuidax(file.text)) { const r = readQuidax(file.text); if (r) { read.quidax.push({ ...r, name: file.name }); skipped.delete(file.name); } }
+  }
+  const allLegs = [...read.binance.legs, ...read.bybit.flatMap(b => b.legs), ...read.quidax.flatMap(q => q.legs)];
+  const prices = await loadPrices(priceNeeds(allLegs), f);
   const data = { read, prices };
   if (exCache.size > 100) exCache.clear();
   exCache.set(key, { at: Date.now(), data });
@@ -93,10 +104,24 @@ async function finish(
 ): Promise<PipelineOutput> {
   const rates = await loadRates(f);
   const price = priceFn(prices);
-  const built = ex ? buildBinance(ex.read, priceFn(ex.prices)) : null;
-  const hints = built ? matchTransfers(moves, built) : new Map<number, string>();
+  const pf = ex ? priceFn(ex.prices) : null;
+  const built = ex && pf ? [
+    buildBinance(ex.read.binance, pf),
+    ...ex.read.bybit.map(b => buildBybit(b, pf, b.name ?? '')),
+    ...ex.read.quidax.map(q => buildQuidax(q, pf, q.name ?? '')),
+  ] : [];
+  const imports: ExchangeImport[] = built.filter(Boolean) as ExchangeImport[];
+  const merged: ExchangeImport | null = imports.length ? {
+    events: imports.flatMap(x => x.events),
+    items: imports.flatMap(x => x.items),
+    withdrawals: imports.flatMap(x => x.withdrawals),
+    deposits: imports.flatMap(x => x.deposits),
+    notes: imports.flatMap(x => x.notes),
+    files: imports.flatMap(x => x.files),
+  } : null;
+  const hints = merged ? matchTransfers(moves, merged) : new Map<number, string>();
   const classified = classify(moves, price, inp.wallets, inp.labels, hints);
-  if (built) classified.events.push(...built.events);
+  if (merged) classified.events.push(...merged.events);
 
   const rateNotes = new Set<string>();
   const rate = (d: string) => {
@@ -124,10 +149,10 @@ async function finish(
       'Naira rates: CBN central rate, https://www.cbn.gov.ng/api/GetAllExchangeRates',
       'Token prices: DefiLlama historical prices (NRS has not yet published its approved price sources)',
       'Wallet history: TronGrid and public Blockscout explorers',
-      ...(built ? ['Exchange history: the Binance exports you uploaded (read in your browser session, not stored)'] : []),
+      ...(merged ? ['Exchange history: the Binance, Bybit or Quidax exports you uploaded (read in your browser session, not stored)'] : []),
     ],
     errors,
-    exchange: built ? { ...built, matched: hints.size } : null,
+    exchange: merged ? { ...merged, matched: hints.size } : null,
   };
 }
 

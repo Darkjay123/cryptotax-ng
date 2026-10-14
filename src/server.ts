@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { createHash } from 'node:crypto';
+import { renderPdf } from './pdf.js';
 import { runPipeline } from './pipeline.js';
 import type { Label } from './classify.js';
 import { isTronAddress } from './wallet/tron.js';
@@ -125,6 +126,15 @@ async function build(wallets: string[], year: number, labels: Record<string, Lab
     return { status: 502, body: { error: `Could not build the report: ${(e as Error).message}` } };
   }
 }
+
+app.get('/api/report/:id/pdf', async c => {
+  const j = jobs.get(c.req.param('id'));
+  if (!j) return c.json({ error: 'That report expired. Run it again, then download the PDF.' }, 404);
+  if (!j.done) return c.json({ pending: true, id: c.req.param('id') }, 202);
+  if ((j.status ?? 200) !== 200) return c.json(j.result as object, (j.status ?? 200) as 200);
+  const bytes = await renderPdf(j.result as Parameters<typeof renderPdf>[0]);
+  return new Response(bytes as unknown as BodyInit, { headers: { 'content-type': 'application/pdf', 'content-disposition': `attachment; filename="cryptotax-ng-${c.req.param('id')}.pdf"` } });
+});
 
 app.use('/*', serveStatic({ root: './public' }));
 
