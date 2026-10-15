@@ -13,7 +13,7 @@
 @font-face{font-family:'Space Grotesk';font-style:normal;font-weight:300 700;font-display:swap;src:url('/fonts/spacegrotesk-300-700-latin.woff2') format('woff2')}
 @font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url('/fonts/inter-100-900-latin.woff2') format('woff2')}
 :root{
-  --bg:#04090b; --ink:#eaf4ef; --mute:#8fa79d; --acc:#3ce68f; --acc-hi:#8bf5c3;
+  --bg:#04090b; --ink:#eaf4ef; --mute:#9cb1a6; --acc:#3ce68f; --acc-hi:#8bf5c3;
   --teal:#5fd4d0; --warn:#ffb340; --bad:#ff6b6b; --line:rgba(255,255,255,.08);
   --card:rgba(255,255,255,.035); --card-hi:rgba(255,255,255,.055);
   --disp:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
@@ -58,13 +58,13 @@ h1 em{font-style:normal;background:linear-gradient(92deg,var(--acc) 10%,var(--te
 /* form */
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;backdrop-filter:blur(14px)}
 form.card{padding:26px;border-radius:20px;box-shadow:0 30px 90px -30px rgba(60,230,143,.16),0 1px 0 rgba(255,255,255,.05) inset}
-label{display:block;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);margin:18px 0 7px}
+label{display:block;font-size:13px;font-weight:550;color:#a9bfb4;margin:18px 0 7px}
 label:first-child{margin-top:0}
 textarea,input,select{
   width:100%;background:rgba(255,255,255,.03);color:var(--ink);border:1px solid var(--line);
   border-radius:12px;padding:13px 14px;font:inherit;transition:border-color .2s,box-shadow .2s,background .2s}
 textarea{min-height:96px;font:14px/1.55 ui-monospace,Menlo,monospace;resize:vertical}
-input::placeholder,textarea::placeholder{color:#5f7a70}
+input::placeholder,textarea::placeholder{color:#7e968c}
 textarea:focus,input:focus,select:focus{outline:0;border-color:rgba(60,230,143,.55);box-shadow:0 0 0 3px rgba(60,230,143,.14);background:rgba(255,255,255,.045)}
 select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238fa79d' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
 .drop{display:block;border:1.5px dashed rgba(60,230,143,.28);border-radius:14px;padding:22px 18px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:rgba(60,230,143,.03)}
@@ -73,9 +73,9 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .drop small{display:block;color:var(--mute);font-size:12.5px;margin-top:5px;line-height:1.5}
 .drop .picked{display:block;color:var(--acc);font-size:13px;margin-top:9px;font-weight:600}
 #files{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-button{background:linear-gradient(180deg,var(--acc),#2bc97c);color:#03130b;border:0;border-radius:12px;padding:15px 20px;font:600 16px var(--disp);cursor:pointer;width:100%;margin-top:20px;transition:transform .18s var(--ease),box-shadow .18s,filter .18s;box-shadow:0 10px 30px -10px rgba(60,230,143,.5)}
-button:hover{transform:translateY(-2px);box-shadow:0 16px 40px -12px rgba(60,230,143,.6);filter:brightness(1.06)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px 14px;margin-top:20px;align-items:start}
+button{background:linear-gradient(180deg,var(--acc),#2bc97c);color:#03130b;border:0;border-radius:12px;padding:15px 20px;font:600 16px var(--disp);cursor:pointer;width:100%;margin-top:20px;transition:transform .18s var(--ease),box-shadow .18s,filter .18s;box-shadow:0 12px 26px -12px rgba(60,230,143,.35)}
+button:hover{transform:translateY(-2px);box-shadow:0 16px 34px -12px rgba(60,230,143,.45);filter:brightness(1.06)}
 button:active{transform:translateY(0)}
 button:disabled{opacity:.65;cursor:wait;transform:none}
 button.ghost{background:transparent;color:var(--acc);border:1px solid rgba(60,230,143,.4);width:auto;padding:10px 16px;font-size:14px;margin:0;box-shadow:none}
@@ -84,7 +84,7 @@ button.ghost:hover{background:rgba(60,230,143,.08);transform:none;filter:none;bo
 /* steps */
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0}
 .step{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
-.step::after{content:attr(data-n);position:absolute;top:10px;right:14px;font:600 30px var(--disp);color:rgba(60,230,143,.16)}
+.step::after{content:attr(data-n);position:absolute;top:10px;right:14px;font:600 30px var(--disp);color:rgba(60,230,143,.24)}
 .step b{font:600 15px var(--disp);display:block;margin-bottom:5px}
 .step p{margin:0;color:var(--mute);font-size:13.5px;line-height:1.55}
 /* facts */
@@ -118,7 +118,7 @@ td input{width:auto;min-width:130px}
 .tabs button:hover{color:var(--ink);transform:none;filter:none;box-shadow:none;background:rgba(255,255,255,.05)}
 .tabs button.on{background:linear-gradient(180deg,var(--acc),#2bc97c);color:#03130b;font-weight:600}
 .actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
-footer{margin-top:52px;color:var(--mute);font-size:13px;line-height:1.65;border-top:1px solid var(--line);padding-top:22px}
+footer{margin-top:52px;color:#a3b8ad;font-size:13px;line-height:1.65;border-top:1px solid var(--line);padding-top:22px}
 .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid #03130b;border-right-color:transparent;border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px;margin-right:6px}
 @keyframes s{to{transform:rotate(360deg)}}
@@ -164,7 +164,7 @@ footer{margin-top:52px;color:var(--mute);font-size:13px;line-height:1.65;border-
   <label for="files">Exchange statements (optional)</label>
   <label class="drop" for="files">
     <b>Drop a CSV or PDF statement, or click to browse</b>
-    <small>Binance, Bybit, Quidax, Busha, Luno, Bitnob, Yellow Card, Breet, Spenda, Azza, Roqqu, NairaEx, Remitano, Monica, Dantown and other Nigerian ramps. Files are read for this report only and not stored.</small>
+    <small>Binance, Bybit, Quidax, Busha, Luno, Bitnob, Yellow Card, Breet, Spenda, Azza, Roqqu, NairaEx, Remitano, Monica, Dantown and other Nigerian ramps.<br>Files are read for this report only and not stored.</small>
     <span class="picked" id="fpicked" hidden></span>
   </label>
   <input id="files" type="file" accept=".csv,text/csv,.pdf,application/pdf" multiple>
@@ -172,9 +172,9 @@ footer{margin-top:52px;color:var(--mute);font-size:13px;line-height:1.65;border-
 
   <div class="row">
     <div><label for="y">Tax year</label><select id="y"><option>2026</option><option>2025</option></select></div>
-    <div><label for="o">Other taxable income this year, ₦ (optional)</label><input id="o" inputmode="numeric" placeholder="e.g. 2400000"></div>
-    <div><label for="rv">Reinvested in Nigerian companies within 12 months, ₦ (optional)</label><input id="rv" inputmode="numeric" placeholder="e.g. 5000000"></div>
-    <div><label for="bf">Crypto losses brought forward, ₦ (optional)</label><input id="bf" inputmode="numeric" placeholder="e.g. 1200000"></div>
+    <div><label for="o">Other income this year, ₦ (optional)</label><input id="o" inputmode="numeric" placeholder="e.g. 2400000"></div>
+    <div><label for="rv">Reinvested in Nigerian companies within 12 months, ₦</label><input id="rv" inputmode="numeric" placeholder="e.g. 5000000"></div>
+    <div><label for="bf">Losses brought forward, ₦ (optional)</label><input id="bf" inputmode="numeric" placeholder="e.g. 1200000"></div>
   </div>
 
   <button id="go" type="submit">Work out my crypto tax</button>
