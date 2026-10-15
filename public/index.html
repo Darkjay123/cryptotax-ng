@@ -5,78 +5,193 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CryptoTax NG · Your crypto tax, worked out the NRS way</title>
 <meta name="description" content="Paste your wallet. Get your Nigerian crypto and stablecoin tax worked out under the NRS Guidelines on the Taxation of Virtual Assets (July 2026), in naira, at official CBN rates.">
+<meta property="og:title" content="CryptoTax NG · Your crypto tax, worked out the NRS way">
+<meta property="og:description" content="Paste your wallet. Every coin valued at the official CBN rate on the day. An estimate in naira you can file from. No sign-up, nothing stored.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23052b1c'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='%233ce68f' font-family='Arial'%3E%E2%82%A6%3C/text%3E%3C/svg%3E">
 <style>
-:root{--bg:#0b1210;--card:#121c19;--line:#1f2d29;--ink:#e8f1ee;--mute:#93a7a0;--acc:#2fd38a;--acc2:#0f8a57;--warn:#ffb340;--bad:#ff6b6b;--r:14px}
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:300 700;font-display:swap;src:url('/fonts/spacegrotesk-300-700-latin.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url('/fonts/inter-100-900-latin.woff2') format('woff2')}
+:root{
+  --bg:#04090b; --ink:#eaf4ef; --mute:#8fa79d; --acc:#3ce68f; --acc-hi:#8bf5c3;
+  --teal:#5fd4d0; --warn:#ffb340; --bad:#ff6b6b; --line:rgba(255,255,255,.08);
+  --card:rgba(255,255,255,.035); --card-hi:rgba(255,255,255,.055);
+  --disp:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+  --r:16px; --ease:cubic-bezier(.22,1,.36,1);
+}
 *{box-sizing:border-box}html,body{margin:0}
-body{background:radial-gradient(1200px 600px at 80% -10%,#123528 0,transparent 60%),var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg); color:var(--ink); font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+::selection{background:rgba(60,230,143,.28)}
 a{color:var(--acc)}
-.wrap{max-width:980px;margin:0 auto;padding:20px 16px 60px}
-nav{display:flex;justify-content:space-between;align-items:center;padding:6px 0 18px}
-.brand{font-weight:800;letter-spacing:.2px}.brand span{color:var(--acc)}
-.pill{font-size:12px;color:var(--mute);border:1px solid var(--line);border-radius:99px;padding:4px 10px}
-h1{font-size:clamp(28px,6vw,46px);line-height:1.1;margin:10px 0 12px}
-.lede{color:var(--mute);max-width:640px;margin:0 0 22px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
-label{display:block;font-size:13px;color:var(--mute);margin:12px 0 6px}
-textarea,input,select{width:100%;background:#0d1513;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit}
-textarea{min-height:92px;font-family:ui-monospace,Menlo,monospace;font-size:14px}
+/* atmosphere */
+.bg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.bg::before{content:'';position:absolute;inset:-20%;background:
+  radial-gradient(60% 45% at 12% -5%,rgba(60,230,143,.14) 0,transparent 60%),
+  radial-gradient(50% 40% at 95% 10%,rgba(95,212,208,.10) 0,transparent 60%),
+  radial-gradient(55% 45% at 50% 115%,rgba(38,158,102,.12) 0,transparent 60%)}
+.bg::after{content:'';position:absolute;inset:0;background-image:
+  linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:56px 56px;mask-image:radial-gradient(75% 60% at 50% 0%,#000 0%,transparent 75%)}
+.wrap{max-width:1020px;margin:0 auto;padding:24px 20px 72px}
+/* entrance */
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.rise{animation:rise .7s var(--ease) both}
+.d1{animation-delay:.05s}.d2{animation-delay:.14s}.d3{animation-delay:.22s}.d4{animation-delay:.3s}
+/* nav */
+nav{display:flex;justify-content:space-between;align-items:center;padding:8px 0 30px}
+.brand{font:600 19px var(--disp);letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+.brand .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#0f9e66,var(--acc) 55%,var(--teal));display:inline-block;box-shadow:0 0 18px rgba(60,230,143,.45)}
+.brand span{color:var(--acc)}
+.pill{font-size:12.5px;color:var(--mute);border:1px solid var(--line);border-radius:99px;padding:5px 13px;background:rgba(255,255,255,.03)}
+/* hero */
+h1{font:600 clamp(34px,6.2vw,62px)/1.06 var(--disp);letter-spacing:-.025em;margin:6px 0 16px;max-width:19ch}
+h1 em{font-style:normal;background:linear-gradient(92deg,var(--acc) 10%,var(--teal) 60%,#7ee7ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.lede{color:var(--mute);font-size:17.5px;max-width:56ch;margin:0 0 20px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 30px}
+.chip{font-size:13px;color:#cfe8dd;border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:99px;padding:6px 13px;display:inline-flex;align-items:center;gap:7px}
+.chip i{width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc)}
+/* form */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;backdrop-filter:blur(14px)}
+form.card{padding:26px;border-radius:20px;box-shadow:0 30px 90px -30px rgba(60,230,143,.16),0 1px 0 rgba(255,255,255,.05) inset}
+label{display:block;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);margin:18px 0 7px}
+label:first-child{margin-top:0}
+textarea,input,select{
+  width:100%;background:rgba(255,255,255,.03);color:var(--ink);border:1px solid var(--line);
+  border-radius:12px;padding:13px 14px;font:inherit;transition:border-color .2s,box-shadow .2s,background .2s}
+textarea{min-height:96px;font:14px/1.55 ui-monospace,Menlo,monospace;resize:vertical}
+input::placeholder,textarea::placeholder{color:#5f7a70}
+textarea:focus,input:focus,select:focus{outline:0;border-color:rgba(60,230,143,.55);box-shadow:0 0 0 3px rgba(60,230,143,.14);background:rgba(255,255,255,.045)}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238fa79d' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
+.drop{display:block;border:1.5px dashed rgba(60,230,143,.28);border-radius:14px;padding:22px 18px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:rgba(60,230,143,.03)}
+.drop:hover{border-color:rgba(60,230,143,.6);background:rgba(60,230,143,.06)}
+.drop b{display:block;font:500 15px var(--disp);color:#d8efe4}
+.drop small{display:block;color:var(--mute);font-size:12.5px;margin-top:5px;line-height:1.5}
+.drop .picked{display:block;color:var(--acc);font-size:13px;margin-top:9px;font-weight:600}
+#files{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-button{background:var(--acc);color:#04130c;border:0;border-radius:10px;padding:13px 18px;font-weight:700;font-size:16px;cursor:pointer;width:100%;margin-top:16px}
-button.ghost{background:transparent;color:var(--acc);border:1px solid var(--acc2);width:auto;padding:9px 14px;font-size:14px;margin:0}
-button:disabled{opacity:.6;cursor:wait}
-.hint{font-size:13px;color:var(--mute);margin-top:8px}
-.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0}
-.fact b{display:block;font-size:22px;color:var(--acc)}.fact{font-size:13px;color:var(--mute)}
-#out{margin-top:22px}
+button{background:linear-gradient(180deg,var(--acc),#2bc97c);color:#03130b;border:0;border-radius:12px;padding:15px 20px;font:600 16px var(--disp);cursor:pointer;width:100%;margin-top:20px;transition:transform .18s var(--ease),box-shadow .18s,filter .18s;box-shadow:0 10px 30px -10px rgba(60,230,143,.5)}
+button:hover{transform:translateY(-2px);box-shadow:0 16px 40px -12px rgba(60,230,143,.6);filter:brightness(1.06)}
+button:active{transform:translateY(0)}
+button:disabled{opacity:.65;cursor:wait;transform:none}
+button.ghost{background:transparent;color:var(--acc);border:1px solid rgba(60,230,143,.4);width:auto;padding:10px 16px;font-size:14px;margin:0;box-shadow:none}
+button.ghost:hover{background:rgba(60,230,143,.08);transform:none;filter:none;box-shadow:none}
+.hint{font-size:13px;color:var(--mute);margin-top:10px;line-height:1.55}
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0}
+.step{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
+.step::after{content:attr(data-n);position:absolute;top:10px;right:14px;font:600 30px var(--disp);color:rgba(60,230,143,.16)}
+.step b{font:600 15px var(--disp);display:block;margin-bottom:5px}
+.step p{margin:0;color:var(--mute);font-size:13.5px;line-height:1.55}
+/* facts */
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 8px}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;font-size:13px;color:var(--mute)}
+.fact b{display:block;font:600 22px/1.25 var(--disp);color:var(--acc);margin-bottom:5px}
+/* results */
+#out{margin-top:26px}
 .sum{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.sum .card{padding:14px}.sum small{color:var(--mute);font-size:12px;display:block}.sum b{font-size:20px}
-.big b{color:var(--acc);font-size:26px}
-.note{border-left:3px solid var(--warn);padding:10px 12px;background:#1d1a10;border-radius:8px;margin:10px 0;font-size:14px}
-.err{border-left-color:var(--bad);background:#211213}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-th{color:var(--mute);font-weight:600;font-size:12px}
+.sum .card{padding:16px;transition:border-color .2s}
+.sum .card:hover{border-color:rgba(60,230,143,.3)}
+.sum small{color:var(--mute);font-size:12px;display:block;margin-bottom:6px}
+.sum b{font:600 20px var(--disp);font-variant-numeric:tabular-nums}
+.sum .big{grid-column:span 2;background:linear-gradient(135deg,rgba(60,230,143,.1),rgba(95,212,208,.05));border-color:rgba(60,230,143,.28)}
+.sum .big b{font-size:clamp(28px,4vw,38px);background:linear-gradient(92deg,var(--acc-hi),var(--teal));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.note{border-left:3px solid var(--warn);padding:12px 15px;background:rgba(255,179,64,.07);border-radius:10px;margin:10px 0;font-size:14px;line-height:1.55}
+.err{border-left-color:var(--bad);background:rgba(255,107,107,.08)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em}
+tbody tr:hover td{background:rgba(255,255,255,.025)}
 .in{color:var(--acc)}.out{color:#ff9e7a}
 .why{font-size:12px;color:var(--mute);margin-top:4px}
-.need{background:#1a1810}
-td select,td input{padding:7px;font-size:13px;margin-top:4px}
-.tabs{display:flex;gap:8px;margin:18px 0 10px;flex-wrap:wrap}
-.tabs button{width:auto;margin:0;padding:8px 12px;font-size:14px;background:#0d1513;color:var(--ink);border:1px solid var(--line)}
-.tabs button.on{background:var(--acc);color:#04130c}
-footer{margin-top:40px;color:var(--mute);font-size:13px}
+.need{background:rgba(255,179,64,.05)}
+.need td{border-bottom-color:rgba(255,179,64,.25)}
+td select,td input{padding:8px 10px;font-size:13px;margin-top:4px;border-radius:9px}
+td select{width:auto;min-width:150px}
+td input{width:auto;min-width:130px}
+.tabs{display:flex;gap:6px;margin:22px 0 12px;flex-wrap:wrap;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:13px;padding:5px;width:max-content;max-width:100%}
+.tabs button{width:auto;margin:0;padding:9px 15px;font:500 13.5px var(--body);background:transparent;color:var(--mute);border:0;border-radius:9px;box-shadow:none}
+.tabs button:hover{color:var(--ink);transform:none;filter:none;box-shadow:none;background:rgba(255,255,255,.05)}
+.tabs button.on{background:linear-gradient(180deg,var(--acc),#2bc97c);color:#03130b;font-weight:600}
+.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+footer{margin-top:52px;color:var(--mute);font-size:13px;line-height:1.65;border-top:1px solid var(--line);padding-top:22px}
 .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid #04130c;border-right-color:transparent;border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px;margin-right:6px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #03130b;border-right-color:transparent;border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px;margin-right:6px}
 @keyframes s{to{transform:rotate(360deg)}}
-@media(max-width:720px){.sum{grid-template-columns:1fr 1fr}.facts{grid-template-columns:1fr}.row{grid-template-columns:1fr}.hide-sm{display:none}}
+.section-tag{font:600 12px var(--disp);letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin:38px 0 10px}
+@media(max-width:760px){
+  .sum{grid-template-columns:1fr 1fr}.sum .big{grid-column:span 2}
+  .facts,.steps{grid-template-columns:1fr}
+  .row{grid-template-columns:1fr}
+  .hide-sm{display:none}
+  h1{font-size:clamp(30px,8.6vw,40px)}
+  .tabs{width:100%}.tabs button{flex:1;padding:9px 6px}
+}
+@media(prefers-reduced-motion:reduce){
+  .rise{animation:none}
+  html{scroll-behavior:auto}
+  *{transition-duration:.01ms!important}
+}
 </style>
 </head>
 <body>
+<div class="bg" aria-hidden="true"></div>
 <div class="wrap">
-<nav><div class="brand">CryptoTax<span> NG</span></div><div class="pill">NRS Guidelines, 31 July 2026</div></nav>
+<nav class="rise d1">
+  <div class="brand"><span class="dot"></span>CryptoTax<span>&nbsp;NG</span></div>
+  <div class="pill">NRS Guidelines · 31 July 2026</div>
+</nav>
 
-<h1>Paid in USDT? Here's your crypto tax, worked out the NRS way.</h1>
-<p class="lede">Paste your wallet. We read your on-chain history, value every coin at the official CBN rate on the day, and apply Nigeria's new virtual asset tax rules. You get an estimate in naira and a report you can file from. No sign-up, nothing to connect.</p>
+<header>
+  <h1 class="rise d1">Paid in USDT? Here's your crypto tax, <em>worked out the NRS way.</em></h1>
+  <p class="lede rise d2">Paste your wallet. We read your on-chain history, value every coin at the official CBN rate on the day, and apply Nigeria's new virtual asset tax rules. You get an estimate in naira and a report you can file from.</p>
+  <div class="chips rise d2">
+    <span class="chip"><i></i>No sign-up</span>
+    <span class="chip"><i></i>Nothing stored</span>
+    <span class="chip"><i></i>Official CBN rates</span>
+    <span class="chip"><i></i>First returns due 31 Mar 2027</span>
+  </div>
+</header>
 
-<form id="f" class="card">
-  <label for="w">Your wallet addresses (one per line, up to 5). Tron (T…) and Ethereum, Optimism or Gnosis (0x…).</label>
-  <textarea id="w" placeholder="TXyz… or 0xabc…" spellcheck="false"></textarea>
-  <label for="files" style="margin-top:12px">Exchange statements (optional): CSV or PDF from Binance, Bybit, Quidax, Busha, Luno, Bitnob, Yellow Card, Breet, Spenda, Azza, Roqqu, NairaEx, Remitano, Monica, Dantown and other Nigerian ramps</label>
+<form id="f" class="card rise d3">
+  <label for="w">Your wallet addresses</label>
+  <textarea id="w" placeholder="TXyz… or 0xabc… (one per line, up to 5)" spellcheck="false"></textarea>
+
+  <label for="files">Exchange statements (optional)</label>
+  <label class="drop" for="files">
+    <b>Drop a CSV or PDF statement, or click to browse</b>
+    <small>Binance, Bybit, Quidax, Busha, Luno, Bitnob, Yellow Card, Breet, Spenda, Azza, Roqqu, NairaEx, Remitano, Monica, Dantown and other Nigerian ramps. Files are read for this report only and not stored.</small>
+    <span class="picked" id="fpicked" hidden></span>
+  </label>
   <input id="files" type="file" accept=".csv,text/csv,.pdf,application/pdf" multiple>
-  <div class="hint">On Binance: Wallet → Transaction History → Export (CSV or PDF), and P2P → Orders → Export. Quidax and Busha statements from the app work too; a PDF layout we do not know yet is read best-effort and anything unclear lands in the review list, never guessed. Files are read for this report only and not stored.</div>
+  <div class="hint">On Binance: Wallet → Transaction History → Export (CSV or PDF), and P2P → Orders → Export. A layout we do not know yet is read best-effort, and anything unclear lands in the review list, never guessed.</div>
+
   <div class="row">
     <div><label for="y">Tax year</label><select id="y"><option>2026</option><option>2025</option></select></div>
-    <div><label for="o">Other taxable income this year in ₦ (optional)</label><input id="o" inputmode="numeric" placeholder="e.g. 2400000"></div>
-    <div><label for="rv">Reinvestment relief: reinvested in Nigerian companies within 12 months, ₦ (optional)</label><input id="rv" inputmode="numeric" placeholder="e.g. 5000000"></div>
-    <div><label for="bf">Crypto losses brought forward from earlier years, ₦ (optional)</label><input id="bf" inputmode="numeric" placeholder="e.g. 1200000"></div>
+    <div><label for="o">Other taxable income this year, ₦ (optional)</label><input id="o" inputmode="numeric" placeholder="e.g. 2400000"></div>
+    <div><label for="rv">Reinvested in Nigerian companies within 12 months, ₦ (optional)</label><input id="rv" inputmode="numeric" placeholder="e.g. 5000000"></div>
+    <div><label for="bf">Crypto losses brought forward, ₦ (optional)</label><input id="bf" inputmode="numeric" placeholder="e.g. 1200000"></div>
   </div>
+
   <button id="go" type="submit">Work out my crypto tax</button>
   <div class="hint">We only read public blockchain data. Nothing is stored and you never sign anything.</div>
 </form>
 
-<div class="facts">
-  <div class="card fact"><b>31 Mar 2027</b>Deadline to file your 2026 return</div>
-  <div class="card fact"><b>₦100,000</b>Penalty for not filing, then ₦50,000 a month</div>
-  <div class="card fact"><b>$ → ₦</b>Gains measured in dollars, so naira devaluation is not taxed as profit</div>
+<p class="section-tag rise d4">How it works</p>
+<div class="steps rise d4">
+  <div class="step" data-n="01"><b>Paste your wallet</b><p>Add your Tron or EVM addresses, or drop the statements from your exchange or off-ramp app. Up to five wallets and six files.</p></div>
+  <div class="step" data-n="02"><b>We do the reading</b><p>Every transfer, swap, sale and reward is read, valued in dollars at the day's market price, and turned into naira at the official CBN rate for that day.</p></div>
+  <div class="step" data-n="03"><b>See it, file it</b><p>You get the tax estimate in naira, a line-by-line story you can check, and a filing-ready PDF. Anything unclear is asked, never guessed.</p></div>
+</div>
+
+<div class="facts rise d4">
+  <div class="fact"><b>31 Mar 2027</b>Deadline to file your 2026 return</div>
+  <div class="fact"><b>₦100,000</b>Penalty for not filing, then ₦50,000 a month</div>
+  <div class="fact"><b>$ → ₦</b>Gains measured in dollars, so naira devaluation is not taxed as profit</div>
 </div>
 
 <div id="out"></div>
@@ -110,6 +225,13 @@ async function readFiles(){
     }
   }
 }
+// Presentation only: show how many statements are attached.
+$('#files').addEventListener('change', () => {
+  const n = ($('#files').files || []).length, el = $('#fpicked');
+  if (!el) return;
+  el.hidden = !n;
+  el.textContent = n === 1 ? '1 statement attached' : n + ' statements attached';
+});
 
 const LABELS_IN = [['income:professional','Payment for work'],['income:employment','Salary'],['income:staking','Staking reward'],['income:airdrop','Airdrop'],['income:defi','DeFi yield'],['bought','Bought with naira'],['own_wallet','From my own wallet or exchange'],['reimbursement','Refund of money I spent'],['gift_in','Gift'],['ignore','Spam, ignore']];
 const LABELS_OUT = [['payment','Paid for something'],['sold','Sold for naira (P2P)'],['own_wallet','To my own wallet or exchange'],['gift_out','Gift'],['ignore','Spam, ignore']];
@@ -128,7 +250,7 @@ async function run(ev){
   const btn = $('#go'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Reading your wallet history…';
   try {
     let res, j, restarted = false;
-    const req = {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({wallets, uploads, pdfs, year:Number($('#y').value), otherIncome: Number(($('#o').value||'').replace(/[^\d.]/g,''))||0, reinvestedNaira: Number(($('#rv').value||'').replace(/[^\d.]/g,''))||0, lossesBroughtForward: Number(($('#bf').value||'').replace(/[^\d.]/g,''))||0, labels})}};
+    const req = {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({wallets, uploads, pdfs, year:Number($('#y').value), otherIncome: Number(($('#o').value||'').replace(/[^\d.]/g,''))||0, reinvestedNaira: Number(($('#rv').value||'').replace(/[^\d.]/g,''))||0, lossesBroughtForward: Number(($('#bf').value||'').replace(/[^\d.]/g,''))||0, labels})};
     for (let i = 0; i < 8; i++) {
       res = await fetch('/api/report', req);
       if (res.status !== 503) break;
@@ -156,6 +278,20 @@ async function run(ev){
   } finally { btn.disabled = false; btn.textContent = 'Work out my crypto tax'; }
 }
 
+function countUp(el){
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!el || reduce) return;
+  const target = Number(el.textContent.replace(/[^\d.]/g, ''));
+  if (!Number.isFinite(target) || target <= 0) return;
+  const t0 = performance.now(), dur = 950;
+  const tick = now => {
+    const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+    el.textContent = ngn(target * e);
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
 function render(){
   const j = last, t = j.totals, e = j.estimate;
   const need = j.rows.filter(r => !r.label);
@@ -172,16 +308,16 @@ function render(){
   const x = j.exchange;
   if (x) {
     const read = x.files.filter(f => f.kind !== 'unknown').map(f => `${esc(f.name)} (${f.rows} rows)`).join(', ');
-    h += `<div class="card" style="margin:14px 0"><b>From your Binance files</b>${read ? `<div class="why">Read: ${read}</div>` : ''}`;
-    if (x.matched) h += `<div class="note">${x.matched} wallet deposit${x.matched>1?'s':''} matched a Binance withdrawal (or the other way round), so ${x.matched>1?'they were':'it was'} treated as your own money moving, not income.</div>`;
+    h += `<div class="card" style="margin:14px 0"><b>From your exchange and off-ramp statements</b>${read ? `<div class="why">Read: ${read}</div>` : ''}`;
+    if (x.matched) h += `<div class="note">${x.matched} wallet deposit${x.matched>1?'s':''} matched an exchange withdrawal (or the other way round), so ${x.matched>1?'they were':'it was'} treated as your own money moving, not income.</div>`;
     for (const n of x.notes) h += `<div class="note">${esc(n)}</div>`;
-    if (x.review) h += `<div class="note"><b>${x.review} Binance item${x.review>1?'s':''} need you.</b> They are listed below and are not counted yet.</div>`;
+    if (x.review) h += `<div class="note"><b>${x.review} statement item${x.review>1?'s':''} need you.</b> They are listed below and are not counted yet.</div>`;
     if (x.items.length) {
       h += `<table><tr><th>Date</th><th>What happened</th></tr>`;
       for (const i of x.items.slice(0, 300)) h += `<tr class="${i.review?'need':''}"><td>${i.date}</td><td>${esc(i.text)}${i.review?`<div class="why">${esc(i.review)}</div>`:''}</td></tr>`;
       h += `</table>${x.items.length>300?'<div class="hint">Showing the first 300.</div>':''}`;
     }
-    if (x.earlierItems) h += `<div class="hint">${x.earlierItems} earlier Binance records were used only to work out what your coins cost.</div>`;
+    if (x.earlierItems) h += `<div class="hint">${x.earlierItems} earlier statement records were used only to work out what your coins cost.</div>`;
     h += `</div>`;
   }
   h += `<div class="tabs">
@@ -206,7 +342,7 @@ function render(){
         <div class="why">${esc(r.reason)}</div></td></tr>`;
     }
     h += `</table>${j.rows.length>400?'<div class="hint">Showing the first 400.</div>':''}
-      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="ghost" id="recalc">Recalculate</button><button class="ghost" id="csv">Download CSV</button><button class="ghost" id="pdf">Download filing PDF</button></div>`;
+      <div class="actions"><button class="ghost" id="recalc">Recalculate</button><button class="ghost" id="csv">Download CSV</button><button class="ghost" id="pdf">Download filing PDF</button></div>`;
   } else if (tab === 'income') {
     h += `<table><tr><th>Date</th><th>Received</th><th>Type</th><th>Dollar value</th><th>CBN rate</th><th>Taxable ₦</th></tr>`;
     for (const i of j.income) h += `<tr><td>${i.date}</td><td>${units(i.units)} ${esc(i.asset)}</td><td>${esc(i.kind)}</td><td>${usd(i.usdFmv)}</td><td>${i.rate}</td><td>${ngn(i.naira)}</td></tr>`;
@@ -226,6 +362,7 @@ function render(){
   }
   h += `</div>`;
   $('#out').innerHTML = h;
+  countUp($('.sum .big b'));
   document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; render(); });
   document.querySelectorAll('select[data-id]').forEach(s => s.onchange = () => {
     const id = s.dataset.id; const l = toLabel(s.value, 0);
