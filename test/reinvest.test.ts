@@ -16,7 +16,7 @@ describe('reinvestment relief (estimate-level)', () => {
     expect(relieved.taxFromCrypto).toBeLessThan(base.taxFromCrypto);
   });
   it('never pushes chargeable income below zero', () => {
-    const e = estimateIndividual(r, 100_000, 999_999);
+    const e = estimateIndividual(r, 100_000, 2_000_000); // bigger than every chargeable amount
     expect(e.totalChargeableNaira).toBe(0);
     expect(e.taxFromCrypto).toBe(0);
   });
