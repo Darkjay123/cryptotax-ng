@@ -103,7 +103,7 @@ export function buildBybit(read: NonNullable<ReturnType<typeof readBybit>>, pric
         if (l.change <= 0) break;
         const u = usdOf(l.coin, units, l.ts, l.date);
         if (u == null) { items.push({ id: i, date: l.date, source: sourceName, kind: 'reward', text: `${l.op}: ${fmt(units)} ${l.coin}`, review: 'No market price for this coin on that day, so it is not counted.' }); break; }
-        events.push({ type: 'income', id: i, kind: c.incomeKind ?? 'other', date: l.date, asset: l.coin, units, usdFmv: u });
+        events.push({ type: 'income', id: i, kind: c.incomeKind ?? 'other', date: l.date, asset: l.coin, units, usdFmv: u, viaVasp: true });
         items.push({ id: i, date: l.date, source: sourceName, kind: 'reward', text: `${l.op}: ${fmt(units)} ${l.coin}, taxed as income on the day received (para 7.1).` });
         break;
       }

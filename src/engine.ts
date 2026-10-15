@@ -6,7 +6,7 @@
  * CBN/NAFEM rate on the date of each disposal (para 9.1.1, 9.4(2)).
  */
 import {
-  Category, STABLECOINS, WHT_DISPOSAL_RATE, round2, whtAppliesOnDisposal,
+  Category, STABLECOINS, WHT_DISPOSAL_RATE, WHT_PASSIVE_RATE, round2, whtAppliesOnDisposal,
 } from './rules.js';
 
 export type IncomeKind =
@@ -25,7 +25,7 @@ export interface Swap extends Base {
   usdFmvOut: number; viaVasp?: boolean;
 }
 /** Tokens received as income (fees, salary, staking, airdrop...). usdFmv = total dollar FMV at receipt. */
-export interface Income extends Base { type: 'income'; kind: IncomeKind; asset: string; units: number; usdFmv: number; whtNairaDeducted?: number }
+export interface Income extends Base { type: 'income'; kind: IncomeKind; asset: string; units: number; usdFmv: number; whtNairaDeducted?: number; viaVasp?: boolean }
 /** Acquired with a known dollar cost that is not a taxable event for this taxpayer (e.g. opening balance). */
 export interface Opening extends Base { type: 'opening'; asset: string; units: number; usdCost: number }
 /** Moved between wallets you own (para 7.2.2) or wrapped/unwrapped (para 10.1). Not a disposal. */
@@ -74,6 +74,10 @@ export interface Report {
   holdings: Record<string, { units: number; usdCost: number }>;
   warnings: string[];
 }
+
+/** Para 8.1: VASPs withhold 10% on passive incomes (staking, mining, airdrops, DeFi yield).
+ *  The credit only counts where a VASP actually paid the income; self-custody income has no withholding. */
+const PASSIVE_INCOME: ReadonlySet<IncomeKind> = new Set(['staking', 'mining', 'defi', 'airdrop']);
 
 const EPS = 1e-12;
 
@@ -178,10 +182,11 @@ export function computeReport(events: TaxEvent[], opts: Options): Report {
       case 'income': {
         // Para 6.1.1(3), 9.5(3)-(4), 9.6: income at dollar FMV on receipt x rate; cost base stepped up.
         const rate = opts.rate(e.date);
+        const passiveWht = e.viaVasp && PASSIVE_INCOME.has(e.kind) ? e.usdFmv * rate * WHT_PASSIVE_RATE : 0;
         income.push({
           date: e.date, asset: e.asset.toUpperCase(), units: e.units, kind: e.kind,
           usdFmv: round6(e.usdFmv), rate, naira: round2(e.usdFmv * rate),
-          whtNaira: round2(e.whtNairaDeducted ?? 0), sourceId: e.id,
+          whtNaira: round2(e.whtNairaDeducted ?? passiveWht), sourceId: e.id,
         });
         addLot(e.asset, e.units, e.usdFmv, e.date);
         break;

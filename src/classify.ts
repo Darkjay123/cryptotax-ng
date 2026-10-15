@@ -29,7 +29,7 @@ export interface Row {
 
 export interface Classified { rows: Row[]; events: TaxEvent[]; unpriced: Row[]; spam: number; needsReview: number }
 
-const isStable = (s: string) => !!STABLECOINS[s];
+const isStable = (s: string) => !!STABLECOINS[s.toUpperCase()];
 
 /**
  * Spam and fake tokens: names that are web addresses or adverts, emoji, or

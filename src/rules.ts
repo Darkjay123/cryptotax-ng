@@ -47,6 +47,9 @@ export function personalIncomeTax(chargeable: number): number {
 export const STABLECOINS: Record<string, { peg: 'USD' }> = {
   USDT: { peg: 'USD' }, USDC: { peg: 'USD' }, BUSD: { peg: 'USD' }, DAI: { peg: 'USD' },
   PYUSD: { peg: 'USD' }, FDUSD: { peg: 'USD' }, TUSD: { peg: 'USD' }, USDE: { peg: 'USD' },
+  USDD: { peg: 'USD' }, GHO: { peg: 'USD' }, FRAX: { peg: 'USD' }, USDS: { peg: 'USD' },
+  CRVUSD: { peg: 'USD' }, USDP: { peg: 'USD' }, LUSD: { peg: 'USD' }, SUSD: { peg: 'USD' },
+  USD1: { peg: 'USD' },
 };
 
 export function round2(n: number): number {

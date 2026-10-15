@@ -6,6 +6,7 @@ export interface PdfReport {
   totals: {
     gainsNaira: number; lossesNaira: number; netDisposalNaira: number;
     chargeableGainsNaira: number; incomeNaira: number; vaChargeableNaira: number; whtCreditNaira: number;
+    lossesUsedNaira?: number;
   };
   estimate: {
     otherChargeableNaira: number; reinvestedNaira?: number; totalChargeableNaira: number;
@@ -133,6 +134,10 @@ export async function renderPdf(r: PdfReport): Promise<Uint8Array> {
     'This report is an estimate prepared from public blockchain data and the statements you uploaded. It is not tax advice and not a filing. Verify the lines marked "needs review" before relying on any figure.',
     'If you reinvested disposal proceeds in Nigerian companies within 12 months of the disposal, you may qualify for reinvestment relief under the Nigeria Tax Act 2025. Where you entered an amount, this report reduces chargeable income by it; confirm the relief conditions with your tax adviser before filing.',
     'Street USDT in Nigeria usually trades a few percent above the CBN rate used here, so the naira totals read conservative.',
+    'Stamp duty of 1.5% applies to token-to-fiat and fiat-to-token transfers, and the VASP withholds it in token units (Guidelines para 6.3). If a statement shows units before that withholding, cost bases read slightly high.',
+    'VAT of 7.5% applies to VASP service fees (exchange, custody), not to the transfer of the crypto itself (Guidelines para 6.2); fees shown in your statements may already include it.',
+    ...(r.totals.lossesUsedNaira && r.totals.lossesUsedNaira > 0 ? [`Crypto losses brought forward from earlier years were applied against this year\u2019s gains (Guidelines para 9.4). Keep your prior-year records to support the amount claimed.`] : []),
+    ...(r.year === 2025 ? ['This estimate applies the Nigeria Tax Act 2025 personal income tax bands, which only take effect on 1 January 2026; an actual 2025 return would be assessed under the previous tax rules.'] : []),
   ]) { const words = line.split(' '); let cur = ''; for (const w of words) { if (font.widthOfTextAtSize(cur + ' ' + w, 9) > W - 2 * M) { text(cur, M); y -= 12; cur = w; } else cur = cur ? cur + ' ' + w : w; } if (cur) { text(cur, M); y -= 12; } }
   y -= 4;
 

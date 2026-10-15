@@ -50,6 +50,8 @@ You can relabel anything (payment for work, bought with naira, own wallet, P2P s
 | FIFO by default, weighted average if elected | 9.3.3(3) | `engine.ts` |
 | Annual netting; crypto losses only offset crypto gains and carry forward | 9.4 | `engine.ts` |
 | WHT 1% of gross proceeds on Category 1, 3, 5 disposals via a VASP | 8.1 | `rules.ts` |
+| WHT 10% on passive income (staking, mining, airdrops, DeFi rewards) paid through a VASP, credited on the return | 8.1, 9.5(4) | `engine.ts` income |
+| Crypto losses brought forward from earlier years offset this year's gains (form input) | 9.4 | `engine.ts` |
 | 2026 personal income tax bands (0% to ₦800k, then 15% to 25%) | NTA 2025 | `rules.ts` |
 
 `test/nrs-illustrations.test.ts` reproduces the Guidelines' own worked examples: Illustration 2 (₦470,000 taxable, not ₦970,000) and Illustration 3 (₦1,600,000 gain, 0.02 ETH withheld, $4,000 BTC cost base).

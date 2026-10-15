@@ -186,7 +186,7 @@ export function buildBinance(read: ReturnType<typeof readBinanceFiles>, price: P
         if (l.change <= 0) break;
         const u = usdOf(l.coin, units, l.ts, l.date);
         if (u == null) { items.push({ id: i, date: l.date, source: 'Binance', kind: 'reward', text: `${l.op}: ${fmt(units)} ${l.coin}`, review: 'No market price for this coin on that day, so it is not counted.' }); break; }
-        events.push({ type: 'income', id: i, kind: c.incomeKind ?? 'other', date: l.date, asset: l.coin, units, usdFmv: u });
+        events.push({ type: 'income', id: i, kind: c.incomeKind ?? 'other', date: l.date, asset: l.coin, units, usdFmv: u, viaVasp: true });
         items.push({ id: i, date: l.date, source: 'Binance', kind: 'reward', text: `${l.op}: ${fmt(units)} ${l.coin}, taxed as income on the day received (para 7.1).` });
         break;
       }
@@ -194,7 +194,7 @@ export function buildBinance(read: ReturnType<typeof readBinanceFiles>, price: P
         const u = usdOf(l.coin, units, l.ts, l.date);
         if (u == null) { items.push({ id: i, date: l.date, source: 'Binance', kind: l.change > 0 ? 'pay_in' : 'pay_out', text: `Binance Pay ${l.change > 0 ? 'received' : 'sent'} ${fmt(units)} ${l.coin}`, review: 'No market price for this coin on that day.' }); break; }
         if (l.change > 0) {
-          events.push({ type: 'income', id: i, kind: 'professional', date: l.date, asset: l.coin, units, usdFmv: u });
+          events.push({ type: 'income', id: i, kind: 'professional', date: l.date, asset: l.coin, units, usdFmv: u, viaVasp: true });
           items.push({ id: i, date: l.date, source: 'Binance', kind: 'pay_in', text: `Received ${fmt(units)} ${l.coin} by Binance Pay. Guessed as payment for work.`, review: 'Check this: if it was a refund, a gift or from your own account, it is not income.' });
         } else {
           events.push({ type: 'swap', id: i, date: l.date, assetOut: l.coin, unitsOut: units, assetIn: '__SPENT__', unitsIn: 0, usdFmvOut: u });

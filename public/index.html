@@ -67,6 +67,7 @@ footer{margin-top:40px;color:var(--mute);font-size:13px}
     <div><label for="y">Tax year</label><select id="y"><option>2026</option><option>2025</option></select></div>
     <div><label for="o">Other taxable income this year in ₦ (optional)</label><input id="o" inputmode="numeric" placeholder="e.g. 2400000"></div>
     <div><label for="rv">Reinvestment relief: reinvested in Nigerian companies within 12 months, ₦ (optional)</label><input id="rv" inputmode="numeric" placeholder="e.g. 5000000"></div>
+    <div><label for="bf">Crypto losses brought forward from earlier years, ₦ (optional)</label><input id="bf" inputmode="numeric" placeholder="e.g. 1200000"></div>
   </div>
   <button id="go" type="submit">Work out my crypto tax</button>
   <div class="hint">We only read public blockchain data. Nothing is stored and you never sign anything.</div>
@@ -127,7 +128,7 @@ async function run(ev){
   const btn = $('#go'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Reading your wallet history…';
   try {
     let res, j, restarted = false;
-    const req = {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({wallets, uploads, pdfs, year:Number($('#y').value), otherIncome: Number(($('#o').value||'').replace(/[^\d.]/g,''))||0, reinvestedNaira: Number(($('#rv').value||'').replace(/[^\d.]/g,''))||0, labels})}};
+    const req = {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({wallets, uploads, pdfs, year:Number($('#y').value), otherIncome: Number(($('#o').value||'').replace(/[^\d.]/g,''))||0, reinvestedNaira: Number(($('#rv').value||'').replace(/[^\d.]/g,''))||0, lossesBroughtForward: Number(($('#bf').value||'').replace(/[^\d.]/g,''))||0, labels})}};
     for (let i = 0; i < 8; i++) {
       res = await fetch('/api/report', req);
       if (res.status !== 503) break;
@@ -254,7 +255,7 @@ function csv(){
   const j = last; const rows = [['date','chain','tx','direction','asset','units','usd_value','treated_as','your_note','reason']];
   for (const r of j.rows) rows.push([r.date, r.chain, r.hash, r.direction, r.symbol, r.units, r.usd ?? '', labelKey(labels[r.id] || r.label) || 'needs review', notes[r.id] || '', r.reason]);
   rows.push([]); rows.push(['income_naira', j.totals.incomeNaira]); rows.push(['net_gains_naira', j.totals.netDisposalNaira]);
-  rows.push(['wht_credit_naira', j.totals.whtCreditNaira]); rows.push(['estimated_tax_from_crypto_naira', j.estimate.estimatedBalanceDue]);
+  rows.push(['wht_credit_naira', j.totals.whtCreditNaira]); rows.push(['losses_used_naira', j.totals.lossesUsedNaira]); rows.push(['losses_carried_forward_naira', j.totals.lossCarriedForwardNaira]); rows.push(['estimated_tax_from_crypto_naira', j.estimate.estimatedBalanceDue]);
   const text = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'text/csv'}));
   a.download = `crypto-tax-${j.year}.csv`; a.click();

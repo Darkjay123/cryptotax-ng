@@ -6,10 +6,15 @@
  */
 const CBN_URL = 'https://www.cbn.gov.ng/api/GetAllExchangeRates';
 
-export interface RateTable { dates: string[]; rates: Map<string, number>; fetchedAt: number }
+export interface RateTable { dates: string[]; rates: Map<string, number>; fetchedAt: number; fallback?: boolean }
+
+import { FALLBACK_RATE_SNAPSHOT_AT, FALLBACK_RATES } from './rates-fallback.js';
 
 let cache: RateTable | null = null;
 const TTL = 6 * 3600_000;
+
+/** Test hook: forget the cached rate table. */
+export function clearRateCacheForTests(): void { cache = null; }
 
 export function buildRateTable(rows: Array<{ currency: string; ratedate: string; centralrate: string }>): RateTable {
   const rates = new Map<string, number>();
@@ -23,10 +28,21 @@ export function buildRateTable(rows: Array<{ currency: string; ratedate: string;
 
 export async function loadRates(f: typeof fetch = fetch): Promise<RateTable> {
   if (cache && Date.now() - cache.fetchedAt < TTL) return cache;
-  const r = await f(CBN_URL, { headers: { accept: 'application/json', 'user-agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(60_000) });
-  if (!r.ok) throw new Error(`CBN rates ${r.status}`);
-  cache = buildRateTable(await r.json());
-  if (!cache.dates.length) throw new Error('CBN rates feed had no US dollar rows');
+  for (let i = 0; i < 2; i++) {
+    try {
+      const r = await f(CBN_URL, { headers: { accept: 'application/json', 'user-agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(60_000) });
+      if (!r.ok) throw new Error(`CBN rates ${r.status}`);
+      const t = buildRateTable(await r.json());
+      if (!t.dates.length) throw new Error('CBN rates feed had no US dollar rows');
+      cache = t;
+      return cache;
+    } catch { if (i === 1) break; await new Promise((res) => setTimeout(res, 800)); }
+  }
+  // The live feed could not be reached. A bundled snapshot of the same official
+  // CBN central rates keeps the report working; the report says so.
+  const rates = new Map<string, number>();
+  for (const [d, v] of Object.entries(FALLBACK_RATES)) { const n = Number(v); if (n > 0) rates.set(d, n); }
+  cache = { dates: [...rates.keys()].sort(), rates, fetchedAt: Date.now(), fallback: true };
   return cache;
 }
 

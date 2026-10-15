@@ -84,7 +84,8 @@ app.post('/api/report', async c => {
   const labels = (body.labels && typeof body.labels === 'object') ? body.labels as Record<string, Label> : {};
   const other = Math.max(0, Number(body.otherIncome ?? 0) || 0);
   const reinvested = Math.max(0, Number(body.reinvestedNaira ?? 0) || 0);
-  const id = createHash('sha256').update(JSON.stringify([wallets.slice().sort(), year, labels, other, reinvested, body.method, uploads.map(u => u.text), pdfs.map(p => p.b64)])).digest('hex').slice(0, 24);
+  const lossesBF = Math.max(0, Number(body.lossesBroughtForward ?? 0) || 0);
+  const id = createHash('sha256').update(JSON.stringify([wallets.slice().sort(), year, labels, other, reinvested, lossesBF, body.method, uploads.map(u => u.text), pdfs.map(p => p.b64)])).digest('hex').slice(0, 24);
   sweepJobs();
   let job = jobs.get(id);
   if (!job || (job.done && job.status !== 200)) {
@@ -102,7 +103,7 @@ app.post('/api/report', async c => {
 
 async function build(wallets: string[], year: number, labels: Record<string, Label>, other: number, body: any, uploads: { name: string; text: string }[] = [], pdfs: { name: string; b64: string }[] = []): Promise<{ status: number; body: unknown }> {
   try {
-    const out = await runPipeline({ wallets, year, labels, otherChargeableNaira: other, reinvestedNaira: Math.max(0, Number(body.reinvestedNaira ?? 0) || 0), method: body.method === 'WAC' ? 'WAC' : 'FIFO', exchangeFiles: uploads, exchangePdfs: pdfs });
+    const out = await runPipeline({ wallets, year, labels, otherChargeableNaira: other, reinvestedNaira: Math.max(0, Number(body.reinvestedNaira ?? 0) || 0), lossesBroughtForwardNaira: Math.max(0, Number(body.lossesBroughtForward ?? 0) || 0), method: body.method === 'WAC' ? 'WAC' : 'FIFO', exchangeFiles: uploads, exchangePdfs: pdfs });
     const inYear = (d: string) => d.startsWith(String(year));
     return { status: 200, body: {
       year,

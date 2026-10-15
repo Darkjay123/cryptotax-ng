@@ -7,6 +7,7 @@ import { classify, Classified, Label } from './classify.js';
 import { estimateIndividual, Estimate } from './estimate.js';
 import { loadPrices, priceFn } from './prices.js';
 import { loadRates, rateOn } from './rates.js';
+import { FALLBACK_RATE_SNAPSHOT_AT } from './rates-fallback.js';
 import { fetchTron, isTronAddress } from './wallet/tron.js';
 import { EVM_CHAINS, fetchEvm, isEvmAddress } from './wallet/evm.js';
 import type { ChainId, Movement } from './wallet/types.js';
@@ -28,6 +29,8 @@ export interface PipelineInput {
   otherChargeableNaira?: number;
   /** Proceeds the user says were reinvested in Nigerian companies within 12 months (estimate-level relief). */
   reinvestedNaira?: number;
+  /** Capital losses from earlier years carried forward against this year's gains (para 9.4). */
+  lossesBroughtForwardNaira?: number;
   method?: 'FIFO' | 'WAC';
   fetchImpl?: typeof fetch;
 }
@@ -175,6 +178,7 @@ async function finish(
   if (merged) classified.events.push(...merged.events);
 
   const rateNotes = new Set<string>();
+  if (rates.fallback) rateNotes.add(`The CBN rate feed could not be reached just now, so the bundled snapshot of CBN central rates (generated ${FALLBACK_RATE_SNAPSHOT_AT}) was used.`);
   const rate = (d: string) => {
     const r = rateOn(rates, d);
     if (r.rateDate !== d) rateNotes.add(`${d}: no CBN rate published, used ${r.rateDate} (₦${r.rate}).`);
@@ -182,14 +186,14 @@ async function finish(
   };
 
   // Everything before the tax year only builds cost base; only this year's disposals and income count.
-  const all = computeReport(classified.events, { rate, method: inp.method, warnFrom: `${inp.year}-01-01` });
+  const all = computeReport(classified.events, { rate, method: inp.method, warnFrom: `${inp.year}-01-01`, lossesBroughtForwardNaira: inp.lossesBroughtForwardNaira });
   const y = String(inp.year);
   const report: Report = {
     ...all,
     disposals: all.disposals.filter(d => d.date.startsWith(y)),
     income: all.income.filter(i => i.date.startsWith(y)),
   };
-  report.totals = totalsFor(report);
+  report.totals = totalsFor(report, inp.lossesBroughtForwardNaira ?? 0);
   const estimate = estimateIndividual(report, inp.otherChargeableNaira ?? 0, inp.reinvestedNaira ?? 0);
 
   return {
@@ -207,18 +211,19 @@ async function finish(
   };
 }
 
-function totalsFor(r: Report): Report['totals'] {
+function totalsFor(r: Report, bf: number): Report['totals'] {
   const gains = r.disposals.filter(d => d.nairaGain > 0).reduce((s, d) => s + d.nairaGain, 0);
   const losses = -r.disposals.filter(d => d.nairaGain < 0).reduce((s, d) => s + d.nairaGain, 0);
   const net = gains - losses;
   const inc = r.income.reduce((s, i) => s + i.naira, 0);
   const wht = r.disposals.reduce((s, d) => s + d.whtNaira, 0) + r.income.reduce((s, i) => s + i.whtNaira, 0);
+  const used = net > 0 ? Math.min(net, bf) : 0;
   const r2 = (n: number) => Math.round(n * 100) / 100;
   return {
     gainsNaira: r2(gains), lossesNaira: r2(losses), netDisposalNaira: r2(net),
-    lossesUsedNaira: 0, lossCarriedForwardNaira: r2(net < 0 ? -net : 0),
-    chargeableGainsNaira: r2(Math.max(0, net)), incomeNaira: r2(inc),
-    vaChargeableNaira: r2(Math.max(0, net) + inc), whtCreditNaira: r2(wht),
+    lossesUsedNaira: r2(used), lossCarriedForwardNaira: r2((net < 0 ? -net : 0) + (bf - used)),
+    chargeableGainsNaira: r2(Math.max(0, net - used)), incomeNaira: r2(inc),
+    vaChargeableNaira: r2(Math.max(0, net - used) + inc), whtCreditNaira: r2(wht),
   };
 }
 
