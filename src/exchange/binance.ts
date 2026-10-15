@@ -31,7 +31,7 @@ export interface ExchangeImport {
   withdrawals: Transfer[];  // left Binance (may arrive in the user's wallet)
   deposits: Transfer[];     // arrived on Binance (may have left the user's wallet)
   notes: string[];
-  files: { name: string; kind: 'binance_transactions' | 'binance_p2p' | 'bybit_transactions' | 'quidax_statement' | 'unknown' | 'binance_pdf' | 'binance_p2p_pdf' | 'bybit_pdf' | 'quidax_pdf' | 'pdf_generic'; rows: number }[];
+  files: { name: string; kind: 'binance_transactions' | 'binance_p2p' | 'bybit_transactions' | 'quidax_statement' | 'naira_statement' | 'unknown' | 'binance_pdf' | 'binance_p2p_pdf' | 'bybit_pdf' | 'quidax_pdf' | 'naira_statement_pdf' | 'pdf_generic'; rows: number }[];
 }
 
 export interface Leg { ts: number; date: string; op: string; coin: string; change: number; account: string; remark: string }

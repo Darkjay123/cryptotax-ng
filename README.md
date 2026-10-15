@@ -9,14 +9,23 @@ Docs: [Architecture](docs/ARCHITECTURE.md) · [Tax rules, paragraph by paragraph
 ## Any exchange statement, CSV or PDF
 
 Upload a wallet plus up to six statements. CSVs from Binance (Transaction History
-and P2P Order History), Bybit and Quidax are read exactly as before. PDFs now work
-too: a PDF statement from any exchange or on/off-ramp (Binance's app statement,
-Bybit, Quidax, Busha, Luno, Bitnob, Yellow Card, Breet, Apexpay and others) is
-reconstructed into the same table the matching reader already understands, so every
-tax rule stays in the tested readers and nothing about the PDF is trusted.
+and P2P Order History), Bybit and Quidax are read exactly as before. Statements
+from the exchanges and on/off-ramps Nigerians actually use (Busha, Luno, Bitnob,
+Yellow Card, Breet, Roqqu, NairaEx, Remitano, Spenda, Azza, Monica, Dantown,
+Getkoyn, Sekiapp, Gexipay and others) are read best-effort from their common
+statement shapes, with the vendor's name shown on each line. PDFs work too: a PDF
+statement from any exchange or on/off-ramp (Binance's app statement and the list
+above) is reconstructed into the same table the matching reader already
+understands, so every tax rule stays in the tested readers and nothing about the
+PDF is trusted.
 
 - Known layouts (Binance Transaction History, Binance P2P orders, Bybit transaction
   logs, Quidax debit/credit statements) are read exactly, like their CSVs.
+- Nigerian exchange and off-ramp statements (Breet, Busha, Yellow Card, Bitnob,
+  Luno, Roqqu, NairaEx, Remitano, Spenda, Azza, Monica, Dantown, Getkoyn, Sekiapp,
+  Gexipay and others) are read best-effort: direct rows with a naira value are
+  used as they state, rows without one are paired with a naira line within ten
+  minutes, and anything unclear goes to review, never guessed.
 - Unknown layouts are read as a generic statement under the exchange's own name
   (detected from the document or file name), with unclear rows listed for review.
 - Rows that fail to read are reported, never guessed. Cancelled, failed and

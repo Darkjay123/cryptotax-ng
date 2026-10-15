@@ -14,6 +14,7 @@ import type { ChainId, Movement } from './wallet/types.js';
 import { buildBinance, ExchangeImport, matchTransfers, priceNeeds, readBinanceFiles } from './exchange/binance.js';
 import { buildBybit, detectBybit, readBybit } from './exchange/bybit.js';
 import { buildQuidax, detectQuidax, readQuidax } from './exchange/quidax.js';
+import { buildNaira, detectNaira, readNaira } from './exchange/naira.js';
 import { parseStatementPdf, PdfStatement } from './exchange/pdfimport.js';
 import { createHash } from 'node:crypto';
 
@@ -93,7 +94,7 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
 }
 
 // Parsed exchange files and their coin prices, cached by file contents for relabelling.
-type ExData = { read: { binance: ReturnType<typeof readBinanceFiles>; bybit: NonNullable<ReturnType<typeof readBybit>>[]; quidax: NonNullable<ReturnType<typeof readQuidax>>[] }; prices: Map<string, number | null>; pdfInfo: Map<string, PdfStatement> } | null;
+type ExData = { read: { binance: ReturnType<typeof readBinanceFiles>; bybit: NonNullable<ReturnType<typeof readBybit>>[]; quidax: NonNullable<ReturnType<typeof readQuidax>>[]; naira: NonNullable<ReturnType<typeof readNaira>>[] }; prices: Map<string, number | null>; pdfInfo: Map<string, PdfStatement> } | null;
 
 /** Parses uploaded PDF statements into the CSV shape their reader already knows. */
 async function readPdfs(pdfs: { name: string; b64: string }[]): Promise<{ files: { name: string; text: string }[]; info: Map<string, PdfStatement> }> {
@@ -115,7 +116,7 @@ async function loadExchange(files: { name: string; text: string }[], f: typeof f
   const key = createHash('sha256').update(JSON.stringify(files.map(x => x.text))).digest('hex');
   const hit = exCache.get(key);
   if (hit && Date.now() - hit.at < HISTORY_TTL) return hit.data;
-  const read = { binance: readBinanceFiles(files), bybit: [] as NonNullable<ReturnType<typeof readBybit>>[], quidax: [] as NonNullable<ReturnType<typeof readQuidax>>[] };
+  const read = { binance: readBinanceFiles(files), bybit: [] as NonNullable<ReturnType<typeof readBybit>>[], quidax: [] as NonNullable<ReturnType<typeof readQuidax>>[], naira: [] as NonNullable<ReturnType<typeof readNaira>>[] };
   const names = new Map(files.map(f => [f.text, f.name]));
   const skipped = new Set(files.map(f => f.name));
   for (const f of read.binance.files) if (f.kind !== 'unknown') skipped.delete(f.name);
@@ -123,8 +124,9 @@ async function loadExchange(files: { name: string; text: string }[], f: typeof f
     if (!skipped.has(file.name)) continue;
     if (detectBybit(file.text)) { const r = readBybit(file.text); if (r) { r.files.forEach(f => f.name = file.name); const st = pdfInfo.get(file.name); if (st) r.sourceName = st.exchange; read.bybit.push({ ...r, name: file.name }); skipped.delete(file.name); } }
     else if (detectQuidax(file.text)) { const r = readQuidax(file.text); if (r) { r.files.forEach(f => f.name = file.name); read.quidax.push({ ...r, name: file.name }); skipped.delete(file.name); } }
+    else { const vendor = detectNaira(file.text, file.name); if (vendor) { const r = readNaira(file.text, vendor); if (r) { r.files.forEach(f => f.name = file.name); read.naira.push({ ...r, name: file.name }); skipped.delete(file.name); } } }
   }
-  const allLegs = [...read.binance.legs, ...read.bybit.flatMap(b => b.legs), ...read.quidax.flatMap(q => q.legs)];
+  const allLegs = [...read.binance.legs, ...read.bybit.flatMap(b => b.legs), ...read.quidax.flatMap(q => q.legs), ...read.naira.flatMap(n => n.legs)];
   const prices = await loadPrices(priceNeeds(allLegs), f);
   const data = { read, prices, pdfInfo };
   if (exCache.size > 100) exCache.clear();
@@ -151,6 +153,7 @@ async function finish(
     buildBinance(ex.read.binance, pf),
     ...ex.read.bybit.map(b => buildBybit(b, pf, b.name ?? '', b.sourceName)),
     ...(quidaxAll ? [buildQuidax(quidaxAll, pf, quidaxAll.name ?? '')] : []),
+    ...ex.read.naira.map(n => buildNaira(n, pf, n.name ?? '')),
   ] : [];
   const imports: ExchangeImport[] = built.filter(Boolean) as ExchangeImport[];
   // The Binance reader marks files it does not recognise as "unknown"; when another
@@ -204,7 +207,7 @@ async function finish(
       'Naira rates: CBN central rate, https://www.cbn.gov.ng/api/GetAllExchangeRates',
       'Token prices: DefiLlama historical prices (NRS has not yet published its approved price sources)',
       'Wallet history: TronGrid and public Blockscout explorers',
-      ...(merged ? ['Exchange history: the Binance, Bybit or Quidax exports you uploaded (read in your browser session, not stored)'] : []),
+      ...(merged ? ['Exchange history: the exchange and on/off-ramp statements you uploaded (Binance, Bybit, Quidax, Busha, Luno, Bitnob, Yellow Card, Breet, Spenda, Azza and others; read in your browser session, not stored)'] : []),
     ],
     errors,
     exchange: merged ? { ...merged, matched: hints.size } : null,

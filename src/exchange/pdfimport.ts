@@ -144,7 +144,8 @@ export function normWhen(s: string): string {
 const DONE = /^(completed|complete|success|successful|finished|done|settled|paid|confirmed)$/i;
 
 const KNOWN_EXCHANGES = ['Binance', 'Bybit', 'Quidax', 'Busha', 'Luno', 'Bitnob', 'Yellow Card', 'NairaEx',
-  'Roqqu', 'Breet', 'Apexpay', 'Chipper Cash', 'Mondax', 'Remitano', 'OKX', 'KuCoin', 'Coinbase', 'Kraken',
+  'Roqqu', 'Breet', 'Apexpay', 'Chipper Cash', 'Mondax', 'Remitano', 'Spenda', 'Azza', 'Monica', 'Dantown',
+  'Getkoyn', 'Sekiapp', 'Gexipay', 'Cashwyre', 'Keshpay', 'OKX', 'KuCoin', 'Coinbase', 'Kraken',
   'Crypto.com', 'Bitget', 'MEXC', 'Gate.io', 'HTX', 'Kado', 'Cassava', 'Payday', 'Grey', 'Domum', 'Cleva'];
 
 function detectExchange(name: string, lines: Line[]): string {
