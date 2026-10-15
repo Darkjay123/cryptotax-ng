@@ -36,7 +36,7 @@ export async function loadPrices(moves: Movement[], f: typeof fetch = fetch): Pr
     if (out.has(k)) continue;
     out.set(k, null);
     if (!need.has(hour)) need.set(hour, new Set());
-    need.get(hour)!.add(m.priceKey);
+    if (m.priceKey) need.get(hour)!.add(m.priceKey);
   }
   const jobs = [...need.entries()];
   let i = 0;

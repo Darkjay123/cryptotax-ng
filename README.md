@@ -40,7 +40,7 @@ From 1 January 2026 every Nigerian earning income must register, file and keep r
 
 ## What it does
 
-1. Reads your wallet history back to 2020 (so older purchases give a cost base): Tron (TRC-20 and TRX), Bitcoin, and 29 EVM chains through public Blockscout explorers, including coins paid out by contracts (exchange withdrawals, bridges, DEX sales), which only show up as internal transactions. Each chain is probed once first, so only chains your address has actually touched are read deeply. Up to 2,000 records per list; the report says so if a wallet is longer.
+1. Reads your wallet history back to 2020 (so older purchases give a cost base): Tron (TRC-20 and TRX), Bitcoin, and 63 EVM chains (61 through public Blockscout explorers, plus Avalanche and Metis through Routescan's free keyless API), including coins paid out by contracts (exchange withdrawals, bridges, DEX sales), which only show up as internal transactions. Each chain is probed once first, so only chains your address has actually touched are read deeply. Up to 2,000 records per list; the report says so if a wallet is longer.
 2. Values every movement in US dollars (stablecoins at their peg, other tokens at market price on the day).
 3. Converts to naira at the CBN central rate on each transaction date (last published rate on weekends and holidays).
 4. Applies the NRS rules and estimates the extra personal income tax your crypto adds.
@@ -70,7 +70,7 @@ You can relabel anything (payment for work, bought with naira, own wallet, P2P s
 - Rules: NRS Information Circular 2026/21 (copy in `ref/`).
 - Naira rates: CBN, `https://www.cbn.gov.ng/api/GetAllExchangeRates` (US dollar central rate, daily since 2001).
 - Prices: DefiLlama historical prices. The NRS says it will publish approved price sources; until then the report names this one.
-- History: TronGrid, mempool.space (Bitcoin) and public Blockscout explorers (29 EVM chains). No keys, nothing stored.
+- History: TronGrid, mempool.space (Bitcoin) and public Blockscout explorers (61 EVM chains) and Routescan (Avalanche, Metis). No keys, nothing stored.
 
 ## Limits (honest)
 

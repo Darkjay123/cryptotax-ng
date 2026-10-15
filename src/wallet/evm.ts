@@ -5,7 +5,7 @@
  */
 import { ChainId, FetchOptions, Movement, isoDate } from './types.js';
 
-type EvmChainId = Exclude<ChainId, 'tron' | 'bitcoin'>;
+type EvmChainId = Exclude<ChainId, 'tron' | 'bitcoin' | 'avalanche' | 'metis'>;
 
 export const EVM_CHAINS: Record<EvmChainId, { api: string; native: string; nativeKey: string; llama: string }> = {
   ethereum:         { api: 'https://eth.blockscout.com/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'ethereum' },
@@ -37,6 +37,38 @@ export const EVM_CHAINS: Record<EvmChainId, { api: string; native: string; nativ
   astar:            { api: 'https://astar.blockscout.com/api/v2', native: 'ASTR', nativeKey: 'coingecko:astar', llama: 'astar' },
   megaeth:          { api: 'https://megaeth.blockscout.com/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'megaeth' },
   plume:            { api: 'https://explorer.plume.org/api/v2', native: 'PLUME', nativeKey: 'coingecko:plume', llama: 'plume' },
+  fuse:             { api: 'https://explorer.fuse.io/api/v2', native: 'FUSE', nativeKey: 'coingecko:fuse', llama: 'fuse' },
+  hashkey:          { api: 'https://hsk.blockscout.com/api/v2', native: 'HSK', nativeKey: 'coingecko:hashkey-ecopoints', llama: 'hashkey_chain' },
+  tac:              { api: 'https://explorer.tac.build/api/v2', native: 'TAC', nativeKey: 'coingecko:tac', llama: 'tac' },
+  orderly:          { api: 'https://explorer.orderly.network/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'orderly' },
+  camp:             { api: 'https://camp.cloud.blockscout.com/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'camp' },
+  blackfort:        { api: 'https://blackfortscan.com/api/v2', native: 'BXN', nativeKey: '', llama: 'blackfort' },
+  matchain:         { api: 'https://matchscan.io/api/v2', native: 'BNB', nativeKey: 'coingecko:binancecoin', llama: 'matchain' },
+  eden:             { api: 'https://eden.blockscout.com/api/v2', native: 'TIA', nativeKey: 'coingecko:celestia', llama: 'eden' },
+  worldmobile:      { api: 'https://explorer.worldmobile.io/api/v2', native: 'WMTX', nativeKey: 'coingecko:world-mobile-token', llama: 'world_mobile' },
+  derive:           { api: 'https://explorer.derive.xyz/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'derive' },
+  datachain:        { api: 'https://www.datanetscan.io/api/v2', native: 'DATA', nativeKey: '', llama: 'data' },
+  reya:             { api: 'https://explorer.reya.network/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'reya_network' },
+  playblock:        { api: 'https://explorer.playblock.io/api/v2', native: 'PBG', nativeKey: '', llama: 'playblock' },
+  lightlink:        { api: 'https://phoenix.lightlink.io/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'lightlink' },
+  mocachain:        { api: 'https://scan.mocachain.org/api/v2', native: 'MOCA', nativeKey: 'coingecko:mocaverse', llama: 'moca' },
+  kite:             { api: 'https://kitescan.ai/api/v2', native: 'KITE', nativeKey: '', llama: 'kite' },
+  awaji:            { api: 'https://awaji.blockscout.com/api/v2', native: 'MIZU', nativeKey: '', llama: 'awaji' },
+  mizuhiki:         { api: 'https://mizuhiki.blockscout.com/api/v2', native: 'MIZU', nativeKey: '', llama: 'mizuhiki' },
+  numine:           { api: 'https://numine.blockscout.com/api/v2', native: 'NUMINE', nativeKey: '', llama: 'numine' },
+  zilliqa:          { api: 'https://zilliqa.blockscout.com/api/v2', native: 'ZIL', nativeKey: 'coingecko:zilliqa', llama: 'zilliqa' },
+  doma:             { api: 'https://explorer.doma.xyz/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'doma' },
+  pepeunchained:    { api: 'https://pepuscan.com/api/v2', native: 'PEPU', nativeKey: 'coingecko:pepe-unchained-2', llama: 'pepe_unchained' },
+  stability:        { api: 'https://explorer.stabilityprotocol.com/api/v2', native: 'FREE', nativeKey: '', llama: 'stability' },
+  creditcoin:       { api: 'https://creditcoin.blockscout.com/api/v2', native: 'CTC', nativeKey: 'coingecko:creditcoin-2', llama: 'creditcoin' },
+  hpp:              { api: 'https://explorer.hpp.io/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'hpp' },
+  zama:             { api: 'https://explorer.mainnet.zama.org/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'zama' },
+  layerk:           { api: 'https://explorer.layerk.com/api/v2', native: 'LYK', nativeKey: 'coingecko:layerk', llama: 'layerk' },
+  cross:            { api: 'https://www.crossscan.io/api/v2', native: 'CROSS', nativeKey: '', llama: 'cross' },
+  gensyn:           { api: 'https://gensyn-mainnet.explorer.alchemy.com/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'gensyn' },
+  neon:             { api: 'https://neon.blockscout.com/api/v2', native: 'NEON', nativeKey: 'coingecko:neon', llama: 'neon' },
+  robinhood:        { api: 'https://robinhoodchain.blockscout.com/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'robinhood' },
+  arc:              { api: 'https://explorer.arc.io/api/v2', native: 'USDC', nativeKey: 'coingecko:usd-coin', llama: 'arc' },
 };
 
 export const isEvmAddress = (a: string) => /^0x[0-9a-fA-F]{40}$/.test(a);

@@ -54,11 +54,15 @@ describe('classification', () => {
 
 describe('multichain wallet reading', () => {
   it('every EVM chain in the table has a full config and a priceable native coin', () => {
-    expect(Object.keys(EVM_CHAINS).length).toBeGreaterThanOrEqual(29);
+    expect(Object.keys(EVM_CHAINS).length).toBeGreaterThanOrEqual(61);
+    // Chains whose native coin has no listing yet price everything else fine; their native-coin
+    // rows come out flagged for review instead of guessed. Keep this list honest and short.
+    const unpricedNative = new Set(['blackfort', 'datachain', 'playblock', 'kite', 'awaji', 'mizuhiki', 'numine', 'stability', 'cross']);
     for (const [id, c] of Object.entries(EVM_CHAINS)) {
       expect(c.api.startsWith('https://'), id).toBe(true);
       expect(c.native.length, id).toBeGreaterThan(0);
-      expect(c.nativeKey.includes(':'), id).toBe(true);
+      if (unpricedNative.has(id)) expect(c.nativeKey, id).toBe('');
+      else expect(c.nativeKey.includes(':'), id).toBe(true);
       expect(c.llama.length, id).toBeGreaterThan(0);
     }
   });
