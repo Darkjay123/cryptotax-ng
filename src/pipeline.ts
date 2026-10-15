@@ -12,6 +12,7 @@ import { fetchTron, isTronAddress } from './wallet/tron.js';
 import { fetchBtc, isBtcAddress } from './wallet/btc.js';
 import { EVM_CHAINS, fetchEvm, isEvmAddress } from './wallet/evm.js';
 import { ES_CHAINS, fetchEs } from './wallet/etherscanish.js';
+import { ANKR_CHAINS, AnkrChainId, ankrKey, fetchAnkr } from './wallet/ankr.js';
 import type { ChainId, Movement } from './wallet/types.js';
 import { buildBinance, ExchangeImport, matchTransfers, priceNeeds, readBinanceFiles } from './exchange/binance.js';
 import { buildBybit, detectBybit, readBybit } from './exchange/bybit.js';
@@ -56,7 +57,8 @@ const HISTORY_TTL = 20 * 60_000;
 
 export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
   const f = inp.fetchImpl ?? fetch;
-  const cacheKey = [inp.year, ...[...inp.wallets].sort(), ...(inp.chains ?? [])].join('|');
+  const aKey = ankrKey();
+  const cacheKey = [inp.year, ...[...inp.wallets].sort(), ...(inp.chains ?? []), aKey ? 'ankr' : 'noankr'].join('|');
   const pdfParts = await readPdfs(inp.exchangePdfs ?? []);
   // A PDF that could not be read still owes the user an explanation, even when
   // it is the only upload and no exchange panel is built.
@@ -73,7 +75,8 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
   const to = Math.min(Date.UTC(inp.year, 11, 31, 23, 59, 59) / 1000, Math.floor(Date.now() / 1000));
   const errors: string[] = [];
   const moves: Movement[] = [];
-  const evmChains = (inp.chains ?? ([...Object.keys(EVM_CHAINS), ...Object.keys(ES_CHAINS)] as ChainId[])).filter(c => c !== 'tron' && c !== 'bitcoin') as Exclude<ChainId, 'tron' | 'bitcoin'>[];
+  const ankrChains = aKey ? (Object.keys(ANKR_CHAINS) as AnkrChainId[]) : [];
+  const evmChains = (inp.chains ?? ([...Object.keys(EVM_CHAINS), ...Object.keys(ES_CHAINS), ...ankrChains] as ChainId[])).filter(c => c !== 'tron' && c !== 'bitcoin') as Exclude<ChainId, 'tron' | 'bitcoin'>[];
 
   await Promise.all(inp.wallets.map(async w => {
     try {
@@ -83,8 +86,9 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
         for (let i = 0; i < evmChains.length; i += 6) {
           await Promise.all(evmChains.slice(i, i + 6).map(async c => {
             const es = (ES_CHAINS as Record<string, (typeof ES_CHAINS)['avalanche']>)[c];
+            const a = (ANKR_CHAINS as Record<string, (typeof ANKR_CHAINS)['bsc']>)[c];
             const opts = { from, to, fetchImpl: f, onTruncated: (what: string) => errors.push(`${c} ${what} for ${short(w)} is very long; only the most recent 2,000 were read, so some older purchases may be missing.`) };
-            try { moves.push(...await (es ? fetchEs(c as keyof typeof ES_CHAINS, w, opts) : fetchEvm(c as Exclude<ChainId, 'tron' | 'bitcoin' | 'avalanche' | 'metis'>, w, opts))); }
+            try { moves.push(...await (a ? fetchAnkr(c as AnkrChainId, w, opts) : es ? fetchEs(c as keyof typeof ES_CHAINS, w, opts) : fetchEvm(c as Exclude<ChainId, 'tron' | 'bitcoin' | 'avalanche' | 'metis' | 'bsc' | 'opbnb' | 'fantom' | 'sonic'>, w, opts))); }
             catch (e) { errors.push(`${c} history for ${short(w)} could not be read (${(e as Error).message}).`); }
           }));
         }
