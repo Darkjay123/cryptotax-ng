@@ -8,6 +8,7 @@ import type { Report } from './engine.js';
 
 export interface Estimate {
   otherChargeableNaira: number;
+  reinvestedNaira: number;
   totalChargeableNaira: number;
   taxOnTotal: number;
   taxOnOtherOnly: number;
@@ -16,14 +17,17 @@ export interface Estimate {
   estimatedBalanceDue: number;
 }
 
-export function estimateIndividual(report: Report, otherChargeableNaira = 0): Estimate {
-  const total = otherChargeableNaira + report.totals.vaChargeableNaira;
+export function estimateIndividual(report: Report, otherChargeableNaira = 0, reinvestedNaira = 0): Estimate {
+  // Reinvestment relief (Nigeria Tax Act 2025): the user enters what they reinvested
+  // in Nigerian companies within 12 months; the estimate reduces chargeable income
+  // by it and the PDF tells them to confirm the conditions. Never below zero.
+  const total = Math.max(0, otherChargeableNaira + report.totals.vaChargeableNaira - reinvestedNaira);
   const taxTotal = personalIncomeTax(total);
   const taxOther = personalIncomeTax(otherChargeableNaira);
   const fromCrypto = round2(taxTotal - taxOther);
   const credit = report.totals.whtCreditNaira;
   return {
-    otherChargeableNaira, totalChargeableNaira: round2(total),
+    otherChargeableNaira, reinvestedNaira: round2(reinvestedNaira), totalChargeableNaira: round2(total),
     taxOnTotal: taxTotal, taxOnOtherOnly: taxOther, taxFromCrypto: fromCrypto,
     whtCredit: credit, estimatedBalanceDue: round2(Math.max(0, fromCrypto - credit)),
   };

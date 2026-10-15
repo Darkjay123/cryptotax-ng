@@ -63,6 +63,9 @@ You can relabel anything (payment for work, bought with naira, own wallet, P2P s
 
 ## Limits (honest)
 
+- Reinvestment relief: enter what you reinvested in Nigerian companies within 12 months of your disposals and the estimate reduces chargeable income by that amount. The relief's exact conditions sit in the Nigeria Tax Act 2025, so confirm with a tax adviser before filing.
+- Street rate: P2P USDT in Nigeria usually trades a few percent above the CBN rate used here, so naira totals read conservative.
+
 - An estimate to help you file, not tax advice.
 - P2P naira legs happen off-chain: label a send as "Sold for naira" and enter the naira you received.
 - BSC, Base, Arbitrum and Polygon are not read yet (their free explorers block automated access).

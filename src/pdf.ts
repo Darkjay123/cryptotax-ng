@@ -8,7 +8,7 @@ export interface PdfReport {
     chargeableGainsNaira: number; incomeNaira: number; vaChargeableNaira: number; whtCreditNaira: number;
   };
   estimate: {
-    otherChargeableNaira: number; totalChargeableNaira: number;
+    otherChargeableNaira: number; reinvestedNaira?: number; totalChargeableNaira: number;
     taxFromCrypto: number; whtCredit: number; estimatedBalanceDue: number;
   };
   rows: { id: string; date: string; chain: string; symbol: string; units: number; usd: number; direction: string; label: string; note?: string }[];
@@ -62,6 +62,7 @@ export async function renderPdf(r: PdfReport): Promise<Uint8Array> {
   text('2. Estimated personal income tax effect (individual resident in Nigeria)', M, 12, bold, ACC); y -= 16;
   const est: [string, string][] = [
     ['Other chargeable income you entered', NGN(r.estimate.otherChargeableNaira)],
+    ...(r.estimate.reinvestedNaira ? [['Reinvestment relief claimed', NGN(-r.estimate.reinvestedNaira)] as [string, string]] : []),
     ['Total chargeable income (other + virtual assets)', NGN(r.estimate.totalChargeableNaira)],
     ['Tax attributable to virtual assets (progressive NTA 2025 bands)', NGN(r.estimate.taxFromCrypto)],
     ['Less withholding tax credit', '(' + NGN(r.estimate.whtCredit) + ')'],
@@ -130,6 +131,8 @@ export async function renderPdf(r: PdfReport): Promise<Uint8Array> {
     'Transfers between your own wallets and your exchange accounts are treated as not taxable (Guidelines para 7.2.2); wallet addresses you entered and exchange statements you uploaded are matched to apply this.',
     'Stablecoin-to-stablecoin swaps and non-chargeable transfers are excluded from chargeable gains; notes you typed are classified by the app\u2019s own language model but the rules engine alone computes tax.',
     'This report is an estimate prepared from public blockchain data and the statements you uploaded. It is not tax advice and not a filing. Verify the lines marked "needs review" before relying on any figure.',
+    'If you reinvested disposal proceeds in Nigerian companies within 12 months of the disposal, you may qualify for reinvestment relief under the Nigeria Tax Act 2025. Where you entered an amount, this report reduces chargeable income by it; confirm the relief conditions with your tax adviser before filing.',
+    'Street USDT in Nigeria usually trades a few percent above the CBN rate used here, so the naira totals read conservative.',
   ]) { const words = line.split(' '); let cur = ''; for (const w of words) { if (font.widthOfTextAtSize(cur + ' ' + w, 9) > W - 2 * M) { text(cur, M); y -= 12; cur = w; } else cur = cur ? cur + ' ' + w : w; } if (cur) { text(cur, M); y -= 12; } }
   y -= 4;
 

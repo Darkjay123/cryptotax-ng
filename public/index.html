@@ -66,6 +66,7 @@ footer{margin-top:40px;color:var(--mute);font-size:13px}
   <div class="row">
     <div><label for="y">Tax year</label><select id="y"><option>2026</option><option>2025</option></select></div>
     <div><label for="o">Other taxable income this year in ₦ (optional)</label><input id="o" inputmode="numeric" placeholder="e.g. 2400000"></div>
+    <div><label for="rv">Reinvestment relief: reinvested in Nigerian companies within 12 months, ₦ (optional)</label><input id="rv" inputmode="numeric" placeholder="e.g. 5000000"></div>
   </div>
   <button id="go" type="submit">Work out my crypto tax</button>
   <div class="hint">We only read public blockchain data. Nothing is stored and you never sign anything.</div>
@@ -126,7 +127,7 @@ async function run(ev){
   const btn = $('#go'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Reading your wallet history…';
   try {
     let res, j, restarted = false;
-    const req = {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({wallets, uploads, pdfs, year:Number($('#y').value), otherIncome: Number(($('#o').value||'').replace(/[^\d.]/g,''))||0, labels})};
+    const req = {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({wallets, uploads, pdfs, year:Number($('#y').value), otherIncome: Number(($('#o').value||'').replace(/[^\d.]/g,''))||0, reinvestedNaira: Number(($('#rv').value||'').replace(/[^\d.]/g,''))||0, labels})}};
     for (let i = 0; i < 8; i++) {
       res = await fetch('/api/report', req);
       if (res.status !== 503) break;

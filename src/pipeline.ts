@@ -26,6 +26,8 @@ export interface PipelineInput {
   /** Exchange statements uploaded as PDF (base64); parsed into the same reader shapes. */
   exchangePdfs?: { name: string; b64: string }[];
   otherChargeableNaira?: number;
+  /** Proceeds the user says were reinvested in Nigerian companies within 12 months (estimate-level relief). */
+  reinvestedNaira?: number;
   method?: 'FIFO' | 'WAC';
   fetchImpl?: typeof fetch;
 }
@@ -188,7 +190,7 @@ async function finish(
     income: all.income.filter(i => i.date.startsWith(y)),
   };
   report.totals = totalsFor(report);
-  const estimate = estimateIndividual(report, inp.otherChargeableNaira ?? 0);
+  const estimate = estimateIndividual(report, inp.otherChargeableNaira ?? 0, inp.reinvestedNaira ?? 0);
 
   return {
     year: inp.year, moves, classified, report, estimate,
