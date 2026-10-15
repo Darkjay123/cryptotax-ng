@@ -1,4 +1,4 @@
-export type ChainId = 'tron' | 'ethereum' | 'optimism' | 'gnosis';
+export type ChainId = 'tron' | 'bitcoin' | 'ethereum' | 'optimism' | 'gnosis' | 'base' | 'arbitrum' | 'arbitrum_nova' | 'polygon' | 'ethereum_classic' | 'celo' | 'zksync' | 'scroll' | 'lisk' | 'mode' | 'ink' | 'unichain' | 'soneium' | 'worldchain' | 'shape' | 'immutable' | 'ronin' | 'filecoin' | 'rootstock' | 'flow' | 'iotaevm' | 'etherlink' | 'zetachain' | 'astar' | 'megaeth' | 'plume';
 
 /** One token or coin movement in or out of a wallet the user owns. */
 export interface Movement {

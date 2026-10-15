@@ -9,6 +9,7 @@ import { loadPrices, priceFn } from './prices.js';
 import { loadRates, rateOn } from './rates.js';
 import { FALLBACK_RATE_SNAPSHOT_AT } from './rates-fallback.js';
 import { fetchTron, isTronAddress } from './wallet/tron.js';
+import { fetchBtc, isBtcAddress } from './wallet/btc.js';
 import { EVM_CHAINS, fetchEvm, isEvmAddress } from './wallet/evm.js';
 import type { ChainId, Movement } from './wallet/types.js';
 import { buildBinance, ExchangeImport, matchTransfers, priceNeeds, readBinanceFiles } from './exchange/binance.js';
@@ -71,17 +72,20 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
   const to = Math.min(Date.UTC(inp.year, 11, 31, 23, 59, 59) / 1000, Math.floor(Date.now() / 1000));
   const errors: string[] = [];
   const moves: Movement[] = [];
-  const evmChains = (inp.chains ?? (Object.keys(EVM_CHAINS) as ChainId[])).filter(c => c !== 'tron') as Exclude<ChainId, 'tron'>[];
+  const evmChains = (inp.chains ?? (Object.keys(EVM_CHAINS) as ChainId[])).filter(c => c !== 'tron' && c !== 'bitcoin') as Exclude<ChainId, 'tron' | 'bitcoin'>[];
 
   await Promise.all(inp.wallets.map(async w => {
     try {
       if (isTronAddress(w)) moves.push(...await fetchTron(w, { from, to, fetchImpl: f, maxPages: 40, onTruncated: () => errors.push(`Tron history for ${short(w)} is very long; only the most recent records were read, so some older purchases may be missing.`) }));
+      else if (isBtcAddress(w)) moves.push(...await fetchBtc(w, { from, to, fetchImpl: f, onTruncated: () => errors.push(`Bitcoin history for ${short(w)} is very long; only the most recent records were read, so some older purchases may be missing.`) }));
       else if (isEvmAddress(w)) {
-        for (const c of evmChains) {
-          try { moves.push(...await fetchEvm(c, w, { from, to, fetchImpl: f, onTruncated: what => errors.push(`${c} ${what} for ${short(w)} is very long; only the most recent 2,000 were read, so some older purchases may be missing.`) })); }
-          catch (e) { errors.push(`${c} history for ${short(w)} could not be read (${(e as Error).message}).`); }
+        for (let i = 0; i < evmChains.length; i += 6) {
+          await Promise.all(evmChains.slice(i, i + 6).map(async c => {
+            try { moves.push(...await fetchEvm(c, w, { from, to, fetchImpl: f, onTruncated: what => errors.push(`${c} ${what} for ${short(w)} is very long; only the most recent 2,000 were read, so some older purchases may be missing.`) })); }
+            catch (e) { errors.push(`${c} history for ${short(w)} could not be read (${(e as Error).message}).`); }
+          }));
         }
-      } else errors.push(`${w} is not a Tron or EVM address.`);
+      } else errors.push(`${w} is not a Tron, EVM or Bitcoin address.`);
     } catch (e) { errors.push(`History for ${short(w)} could not be read (${(e as Error).message}).`); }
   }));
   moves.sort((a, b) => a.timestamp - b.timestamp);
