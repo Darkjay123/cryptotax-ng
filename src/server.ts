@@ -6,10 +6,21 @@ import { renderPdf } from './pdf.js';
 import { runPipeline } from './pipeline.js';
 import type { Label } from './classify.js';
 import { isTronAddress } from './wallet/tron.js';
-import { isEvmAddress } from './wallet/evm.js';
+import { EVM_CHAINS, isEvmAddress } from './wallet/evm.js';
+import { ES_CHAINS } from './wallet/etherscanish.js';
+import { ANKR_CHAINS } from './wallet/ankr.js';
+import type { ChainId } from './wallet/types.js';
 import { understand } from './model/notes.js';
 
 export const app = new Hono();
+
+// Chains a POST body may narrow the scan to (probe support; the UI never sends it).
+const VALID_CHAINS = new Set<ChainId>([
+  ...(Object.keys(EVM_CHAINS) as ChainId[]),
+  ...(Object.keys(ES_CHAINS) as ChainId[]),
+  ...(Object.keys(ANKR_CHAINS) as ChainId[]),
+  'tron', 'bitcoin',
+]);
 
 app.use('*', async (c, next) => {
   await next();
@@ -81,18 +92,27 @@ app.post('/api/report', async c => {
   if (bad.length) return c.json({ error: `Not a Tron (T…) or EVM (0x…) address: ${bad.join(', ')}` }, 400);
   const year = Number(body.year ?? 2026);
   if (![2025, 2026].includes(year)) return c.json({ error: 'Year must be 2025 or 2026.' }, 400);
+  let chains: ChainId[] | undefined;
+  if (body.chains !== undefined) {
+    if (!Array.isArray(body.chains)) return c.json({ error: 'chains must be an array of chain names.' }, 400);
+    const asked = [...new Set<string>(body.chains.map((x: unknown) => String(x).trim()))].filter(Boolean);
+    if (asked.length > 10) return c.json({ error: 'Up to 10 chains per report.' }, 400);
+    const unknown = asked.filter(x => !VALID_CHAINS.has(x as ChainId));
+    if (unknown.length) return c.json({ error: `Unknown chain(s): ${unknown.join(', ')}.` }, 400);
+    chains = asked as ChainId[];
+  }
   const labels = (body.labels && typeof body.labels === 'object') ? body.labels as Record<string, Label> : {};
   const other = Math.max(0, Number(body.otherIncome ?? 0) || 0);
   const reinvested = Math.max(0, Number(body.reinvestedNaira ?? 0) || 0);
   const lossesBF = Math.max(0, Number(body.lossesBroughtForward ?? 0) || 0);
-  const id = createHash('sha256').update(JSON.stringify([wallets.slice().sort(), year, labels, other, reinvested, lossesBF, body.method, uploads.map(u => u.text), pdfs.map(p => p.b64)])).digest('hex').slice(0, 24);
+  const id = createHash('sha256').update(JSON.stringify([wallets.slice().sort(), year, chains ?? null, labels, other, reinvested, lossesBF, body.method, uploads.map(u => u.text), pdfs.map(p => p.b64)])).digest('hex').slice(0, 24);
   sweepJobs();
   let job = jobs.get(id);
   if (!job || (job.done && job.status !== 200)) {
     job = { at: Date.now(), done: false };
     jobs.set(id, job);
     const j = job;
-    build(wallets, year, labels, other, body, uploads, pdfs).then(r => { j.result = r.body; j.status = r.status; j.done = true; });
+    build(wallets, year, labels, other, body, uploads, pdfs, chains).then(r => { j.result = r.body; j.status = r.status; j.done = true; });
   }
   const started = Date.now();
   while (!job.done && Date.now() - started < 20_000) await new Promise(r => setTimeout(r, 250));
@@ -101,9 +121,9 @@ app.post('/api/report', async c => {
   return c.json({ ...(job.result as object), id }, (job.status ?? 200) as 200);
 });
 
-async function build(wallets: string[], year: number, labels: Record<string, Label>, other: number, body: any, uploads: { name: string; text: string }[] = [], pdfs: { name: string; b64: string }[] = []): Promise<{ status: number; body: unknown }> {
+async function build(wallets: string[], year: number, labels: Record<string, Label>, other: number, body: any, uploads: { name: string; text: string }[] = [], pdfs: { name: string; b64: string }[] = [], chains?: ChainId[]): Promise<{ status: number; body: unknown }> {
   try {
-    const out = await runPipeline({ wallets, year, labels, otherChargeableNaira: other, reinvestedNaira: Math.max(0, Number(body.reinvestedNaira ?? 0) || 0), lossesBroughtForwardNaira: Math.max(0, Number(body.lossesBroughtForward ?? 0) || 0), method: body.method === 'WAC' ? 'WAC' : 'FIFO', exchangeFiles: uploads, exchangePdfs: pdfs });
+    const out = await runPipeline({ wallets, year, chains, labels, otherChargeableNaira: other, reinvestedNaira: Math.max(0, Number(body.reinvestedNaira ?? 0) || 0), lossesBroughtForwardNaira: Math.max(0, Number(body.lossesBroughtForward ?? 0) || 0), method: body.method === 'WAC' ? 'WAC' : 'FIFO', exchangeFiles: uploads, exchangePdfs: pdfs });
     const inYear = (d: string) => d.startsWith(String(year));
     return { status: 200, body: {
       year,

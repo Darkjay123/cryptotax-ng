@@ -72,6 +72,10 @@ You can relabel anything (payment for work, bought with naira, own wallet, P2P s
 - Prices: DefiLlama historical prices. The NRS says it will publish approved price sources; until then the report names this one.
 - History: TronGrid, mempool.space (Bitcoin) and public Blockscout explorers (61 EVM chains) and Routescan (Avalanche, Metis). No keys, nothing stored.
 
+## Probing one chain
+
+The report API accepts an optional `chains` array in the POST body to narrow the wallet scan (probe support; the UI never sends it). Example: `"chains": ["bsc"]`. Up to 10 chains, unknown names are rejected with a list of what was wrong. Omitting it scans every supported chain, which is what the form does.
+
 ## Limits (honest)
 
 - Reinvestment relief: enter what you reinvested in Nigerian companies within 12 months of your disposals and the estimate reduces chargeable income by that amount. The relief's exact conditions sit in the Nigeria Tax Act 2025, so confirm with a tax adviser before filing.
