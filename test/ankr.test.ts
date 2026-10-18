@@ -28,7 +28,7 @@ function mock(calls: any[]) {
   return (async (_url: string, init?: any) => {
     const params = JSON.parse(init.body).params;
     calls.push(params);
-    return new Response(JSON.stringify(params.from ? page2 : page1), { status: 200 });
+    return new Response(JSON.stringify(params.pageToken ? page2 : page1), { status: 200 });
   }) as unknown as typeof fetch;
 }
 

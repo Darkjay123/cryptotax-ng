@@ -46,7 +46,8 @@ async function ankrPost(key: string, params: unknown, f: typeof fetch): Promise<
 }
 
 const tsOf = (v: any): number => {
-  const n = typeof v === 'number' ? v : /^\d+$/.test(String(v ?? '')) ? Number(v) : Date.parse(String(v ?? '')) / 1000;
+  const raw = String(v ?? '').trim();
+  const n = typeof v === 'number' ? v : /^0x[0-9a-f]+$/i.test(raw) ? parseInt(raw, 16) : /^\d+$/.test(raw) ? Number(raw) : Date.parse(raw) / 1000;
   if (!Number.isFinite(n) || n <= 0) return 0;
   if (n > 1e14) return Math.floor(n / 1e9); // nanoseconds
   if (n > 1e11) return Math.floor(n / 1e3); // milliseconds
