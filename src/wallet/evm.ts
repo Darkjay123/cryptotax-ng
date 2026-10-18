@@ -5,7 +5,7 @@
  */
 import { ChainId, FetchOptions, Movement, isoDate } from './types.js';
 
-type EvmChainId = Exclude<ChainId, 'tron' | 'bitcoin' | 'avalanche' | 'metis' | 'bsc' | 'opbnb' | 'fantom' | 'sonic'>;
+type EvmChainId = Exclude<ChainId, 'tron' | 'bitcoin' | 'avalanche' | 'metis' | 'bsc' | 'fantom'>;
 
 export const EVM_CHAINS: Record<EvmChainId, { api: string; native: string; nativeKey: string; llama: string }> = {
   ethereum:         { api: 'https://eth.blockscout.com/api/v2', native: 'ETH', nativeKey: 'coingecko:ethereum', llama: 'ethereum' },

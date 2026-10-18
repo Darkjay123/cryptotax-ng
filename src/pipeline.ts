@@ -88,7 +88,7 @@ export async function runPipeline(inp: PipelineInput): Promise<PipelineOutput> {
             const es = (ES_CHAINS as Record<string, (typeof ES_CHAINS)['avalanche']>)[c];
             const a = (ANKR_CHAINS as Record<string, (typeof ANKR_CHAINS)['bsc']>)[c];
             const opts = { from, to, fetchImpl: f, onTruncated: (what: string) => errors.push(`${c} ${what} for ${short(w)} is very long; only the most recent 2,000 were read, so some older purchases may be missing.`) };
-            try { moves.push(...await (a ? fetchAnkr(c as AnkrChainId, w, opts) : es ? fetchEs(c as keyof typeof ES_CHAINS, w, opts) : fetchEvm(c as Exclude<ChainId, 'tron' | 'bitcoin' | 'avalanche' | 'metis' | 'bsc' | 'opbnb' | 'fantom' | 'sonic'>, w, opts))); }
+            try { moves.push(...await (a ? fetchAnkr(c as AnkrChainId, w, opts) : es ? fetchEs(c as keyof typeof ES_CHAINS, w, opts) : fetchEvm(c as Exclude<ChainId, 'tron' | 'bitcoin' | 'avalanche' | 'metis' | 'bsc' | 'fantom'>, w, opts))); }
             catch (e) { errors.push(`${c} history for ${short(w)} could not be read (${(e as Error).message}).`); }
           }));
         }

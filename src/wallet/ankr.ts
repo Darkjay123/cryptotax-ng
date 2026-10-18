@@ -1,7 +1,10 @@
 /**
  * EVM wallet history from Ankr's Advanced API (needs ANKR_API_KEY in the
  * environment; Ankr's free plan). Covers chains with no keyless explorer we
- * can reach: BSC, opBNB, Fantom, Sonic. Ankr quirks learned on RugRadar
+ * can reach: BSC and Fantom. (Ankr's Advanced API dropped opBNB and Sonic:
+ * their docs list the supported aliases and neither name is allowed any more,
+ * confirmed live 18 Oct 2026 with "invalid blockchain name" errors.) Ankr
+ * quirks learned on RugRadar
  * (live-verified on BSC): address and blockchain are ARRAYS and the sort key
  * is "descOrder", not "desc".
  */
@@ -9,11 +12,9 @@ import { ChainId, FetchOptions, Movement, isoDate } from './types.js';
 
 export interface AnkrChain { slug: string; native: string; nativeKey: string; llama: string }
 
-export const ANKR_CHAINS: Record<'bsc' | 'opbnb' | 'fantom' | 'sonic', AnkrChain> = {
+export const ANKR_CHAINS: Record<'bsc' | 'fantom', AnkrChain> = {
   bsc:    { slug: 'bsc',    native: 'BNB', nativeKey: 'coingecko:binancecoin', llama: 'bsc' },
-  opbnb:  { slug: 'op_bnb', native: 'BNB', nativeKey: 'coingecko:binancecoin', llama: 'op_bnb' },
   fantom: { slug: 'fantom', native: 'FTM', nativeKey: 'coingecko:fantom',      llama: 'fantom' },
-  sonic:  { slug: 'sonic',  native: 'S',   nativeKey: 'coingecko:sonic-3',     llama: 'sonic' },
 };
 
 export type AnkrChainId = keyof typeof ANKR_CHAINS;
