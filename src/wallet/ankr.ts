@@ -6,7 +6,11 @@
  * confirmed live 18 Oct 2026 with "invalid blockchain name" errors.) Ankr
  * quirks learned on RugRadar
  * (live-verified on BSC): address and blockchain are ARRAYS and the sort key
- * is "descOrder", not "desc".
+ * is "descOrder" (a boolean flag, not a "sort" value) and the cursor
+ * is "pageToken" (response "nextPageToken"). Sending a "sort" value is
+ * silently ignored and pages come back oldest-first, which we hit live on
+ * 18 Oct 2026: long BSC wallets read the oldest 2,000 records and showed
+ * zero rows for 2026.
  */
 import { ChainId, FetchOptions, Movement, isoDate } from './types.js';
 
@@ -66,14 +70,14 @@ export async function fetchAnkr(chain: AnkrChainId, wallet: string, o: FetchOpti
     const params: any = {
       address: [wallet],
       blockchain: [c.slug],
-      sort: 'descOrder',
+      descOrder: true,
       pageSize: 1000,
       fromBlock: 0,
       toBlock: 'latest',
     };
     if (o.from) params.fromDate = isoDate(o.from);
     if (o.to) params.toDate = isoDate(o.to);
-    if (cursor) { params.from = cursor; params.paginationToken = cursor; params.nextPageToken = cursor; }
+    if (cursor) params.pageToken = cursor;
     const j = await ankrPost(key, params, f);
     const txs: any[] = Array.isArray(j?.transactions) ? j.transactions : [];
     for (const it of txs) {

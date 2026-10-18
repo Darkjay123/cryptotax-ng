@@ -38,8 +38,8 @@ describe('fetchAnkr', () => {
     const truncated: string[] = [];
     const rows = await fetchAnkr('bsc', W, { fetchImpl: mock(calls), onTruncated: w => truncated.push(w) });
     expect(calls.length).toBe(2);
-    expect(calls[0]).toMatchObject({ address: [W], blockchain: ['bsc'], sort: 'descOrder', pageSize: 1000 });
-    expect(calls[1].from).toBe('tok-2');
+    expect(calls[0]).toMatchObject({ address: [W], blockchain: ['bsc'], descOrder: true, pageSize: 1000 });
+    expect(calls[1].pageToken).toBe('tok-2');
     const natives = rows.filter(r => r.token === null);
     const tokens = rows.filter(r => r.token);
     expect(natives.length).toBe(2); // hash1 and hash3, hash1 duplicate removed
