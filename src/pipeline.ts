@@ -217,7 +217,7 @@ async function finish(
       'Rules: NRS Information Circular 2026/21, Guidelines on the Taxation of Virtual Assets (31 July 2026)',
       'Naira rates: CBN central rate, https://www.cbn.gov.ng/api/GetAllExchangeRates',
       'Token prices: DefiLlama historical prices (NRS has not yet published its approved price sources)',
-      'Wallet history: TronGrid and public Blockscout explorers',
+      'Wallet history: TronGrid, public Blockscout explorers, Routescan (Avalanche/Metis) and Ankr (BSC, Fantom)',
       ...(merged ? ['Exchange history: the exchange and on/off-ramp statements you uploaded (Binance, Bybit, Quidax, Busha, Luno, Bitnob, Yellow Card, Breet, Spenda, Azza and others; read in your browser session, not stored)'] : []),
     ],
     errors,
