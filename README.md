@@ -40,7 +40,7 @@ From 1 January 2026 every Nigerian earning income must register, file and keep r
 
 ## What it does
 
-1. Reads your wallet history back to 2020 (so older purchases give a cost base): Tron (TRC-20 and TRX), Bitcoin, and 61 EVM chains (58 through public Blockscout explorers, plus Avalanche and Metis through Routescan's free keyless API, and BSC and Fantom through Ankr's Advanced API when an ANKR_API_KEY environment variable is set (opBNB and Sonic are not supported by that API any more)), including coins paid out by contracts (exchange withdrawals, bridges, DEX sales), which only show up as internal transactions. Each chain is probed once first, so only chains your address has actually touched are read deeply. Up to 2,000 records per list; the report says so if a wallet is longer.
+1. Reads your wallet history back to 2020 (so older purchases give a cost base): Tron (TRC-20 and TRX), Bitcoin, and 65 EVM chains: 61 through public Blockscout explorers, Avalanche and Metis through Routescan's free keyless API, and BSC and Fantom through Ankr's Advanced API when an ANKR_API_KEY environment variable is set (opBNB and Sonic are not supported by that API any more), including coins paid out by contracts (exchange withdrawals, bridges, DEX sales), which only show up as internal transactions. Each chain is probed once first, so only chains your address has actually touched are read deeply. Up to 2,000 records per list; the report says so if a wallet is longer.
 2. Values every movement in US dollars (stablecoins at their peg, other tokens at market price on the day).
 3. Converts to naira at the CBN central rate on each transaction date (last published rate on weekends and holidays).
 4. Applies the NRS rules and estimates the extra personal income tax your crypto adds.
@@ -70,7 +70,7 @@ You can relabel anything (payment for work, bought with naira, own wallet, P2P s
 - Rules: NRS Information Circular 2026/21 (copy in `ref/`).
 - Naira rates: CBN, `https://www.cbn.gov.ng/api/GetAllExchangeRates` (US dollar central rate, daily since 2001).
 - Prices: DefiLlama historical prices. The NRS says it will publish approved price sources; until then the report names this one.
-- History: TronGrid, mempool.space (Bitcoin) and public Blockscout explorers (61 EVM chains) and Routescan (Avalanche, Metis). No keys, nothing stored.
+- History: TronGrid, mempool.space (Bitcoin), public Blockscout explorers (61 EVM chains), Routescan (Avalanche, Metis) and Ankr (BSC, Fantom, when the API key is set). No keys, nothing stored.
 
 ## Probing one chain
 
@@ -83,7 +83,7 @@ The report API accepts an optional `chains` array in the POST body to narrow the
 
 - An estimate to help you file, not tax advice.
 - P2P naira legs happen off-chain: label a send as "Sold for naira" and enter the naira you received.
-- BSC, Base, Arbitrum and Polygon are not read yet (their free explorers block automated access).
+- Chains with no readable public explorer (Solana, TON, Cardano and other non-EVM chains) are not read yet.
 - Unlabelled receipts of non-stablecoins are not taxed until you label them; the app says so.
 - Spam and fake tokens (web-address names, emoji, look-alike letters such as "ℰ⊤ℋ" posing as ETH) are left out automatically and counted, so you only label things that matter.
 - Tokens with no market price on the day are left out and counted.
@@ -93,7 +93,7 @@ The report API accepts an optional `chains` array in the POST body to narrow the
 
 ```bash
 npm install
-npm test        # 26 tests
+npm test        # 88 tests
 npm run build && npm start   # http://localhost:8080 (or npm run dev)
 ```
 
