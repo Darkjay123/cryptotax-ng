@@ -181,6 +181,7 @@ footer{margin-top:52px;color:#a3b8ad;font-size:13px;line-height:1.65;border-top:
   </div>
 
   <button id="go" type="submit">Work out my crypto tax</button>
+  <button id="demo" type="button" class="ghost">Try it with a sample wallet</button>
   <div class="hint">We only read public blockchain data. Nothing is stored and you never sign anything.</div>
 </form>
 
@@ -411,6 +412,13 @@ function csv(){
 }
 
 $('#f').onsubmit = e => { e.preventDefault(); labels = {}; notes = {}; reads = {}; tab = 'review'; run('submit'); };
+const SAMPLE_WALLETS = 'TRGsjk84qAKfs6zPTgAMEaWXqpBuYCXsws';  // a real busy Tron wallet with pay received in USDT
+$('#demo').onclick = () => { $('#w').value = SAMPLE_WALLETS; labels = {}; notes = {}; reads = {}; tab = 'review'; run('demo'); };
+const qs = new URLSearchParams(location.search);
+if (qs.get('wallet') || qs.get('demo')) {
+  $('#w').value = qs.get('wallet') ? qs.get('wallet').replace(/[\s,]+/g, '\n') : SAMPLE_WALLETS;
+  if (qs.get('auto') === '1' || qs.get('demo')) { labels = {}; notes = {}; reads = {}; tab = 'review'; run('demo'); }
+}
 </script>
 </body>
 </html>

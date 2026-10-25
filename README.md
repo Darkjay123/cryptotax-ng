@@ -4,6 +4,12 @@ Paste a wallet, get your Nigerian crypto and stablecoin tax worked out under the
 
 **Live:** https://cryptotax-ng.rumptycloud.app · Built for Devcenter Hacktober 2026 on Rumpty Cloud.
 
+## For judges (2 minutes)
+
+Open [https://cryptotax-ng.rumptycloud.app/?demo=1](https://cryptotax-ng.rumptycloud.app/?demo=1): it pre-fills a real, busy Tron wallet (pay received in USDT) and starts the report on its own. Big wallets take a few minutes to read; the counter shows progress.
+
+Short on time: open [the live app](https://cryptotax-ng.rumptycloud.app), press **Try it with a sample wallet**, and while it reads, scroll to the rules: every figure in the report names the NRS Information Circular paragraph behind it, the estimate names the Nigeria Tax Act 2025 it applies, and the Income tab carries a freelancer income summary: every payment for work with its date, dollar value and naira value at that day's CBN rate. When the report lands: open the **Income** tab, relabel a row and hit Recalculate, then download the filing PDF (it renders the same summary) and the CSV for an accountant.
+
 Docs: [Architecture](docs/ARCHITECTURE.md) · [Tax rules, paragraph by paragraph](docs/TAX-RULES.md) · [API](docs/API.md)
 
 ## Any exchange statement, CSV or PDF
