@@ -14,7 +14,7 @@ export interface PdfReport {
   };
   rows: { id: string; date: string; chain: string; symbol: string; units: number; usd: number; direction: string; label: string; note?: string }[];
   disposals: { date: string; asset: string; units: number; proceedsNaira: number; costNaira: number; gainNaira: number; whtNaira: number; sourceId: string }[];
-  income: { date: string; asset: string; units: number; kind: string; naira: number; whtNaira: number; sourceId: string }[];
+  income: { date: string; asset: string; units: number; kind: string; naira: number; whtNaira: number; sourceId: string; usdFmv?: number; rate?: number }[];
   warnings: string[];
   sources: string[];
   exchange: { files: { name: string; kind: string; rows: number }[]; matched: number } | null;
@@ -41,7 +41,7 @@ export async function renderPdf(r: PdfReport): Promise<Uint8Array> {
   // --- Cover block
   text('CryptoTax NG', M, 20, bold, INK); y -= 14;
   text('Virtual asset tax position report (estimate)', M, 11, font, MUT); y -= 8;
-  text(`Tax year: ${r.year}    Generated: ${new Date().toISOString().slice(0, 10)}    Basis: NRS Guidelines on the Taxation of Virtual Assets, Information Circular 2026/21`, M, 8.5, font, MUT);
+  text(`Tax year: ${r.year}    Generated: ${new Date().toISOString().slice(0, 10)}    Basis: Nigeria Tax Act 2025 (virtual digital assets, effective 1 Jan 2026) + NRS Information Circular 2026/21`, M, 8.5, font, MUT);
   y -= 18; rule();
 
   // --- Totals
@@ -73,6 +73,8 @@ export async function renderPdf(r: PdfReport): Promise<Uint8Array> {
     const last = v.startsWith('Estimated');
     text(k, labelX, 9, last ? bold : font); right(v, valX, 9, last ? bold : font); y -= 13;
   }
+  text('Estimated under the Nigeria Tax Act 2025, effective 1 January 2026: virtual asset income and gains are charged', M, 8, font, MUT); y -= 11;
+  text('at the Act\u2019s progressive bands (NRS Circular 2026/21, para 8.1); tax already withheld by an exchange is credited.', M, 8, font, MUT); y -= 12;
   y -= 4; rule();
 
   // --- Disposals table
@@ -125,12 +127,40 @@ export async function renderPdf(r: PdfReport): Promise<Uint8Array> {
   } else { text('No virtual asset income was recorded in the tax year.', M, 9, font, MUT); y -= 14; }
   y -= 4; rule();
 
+  // --- Freelancer income summary
+  text('5. Income summary (freelancers and stablecoin earners)', M, 12, bold, ACC); y -= 15;
+  const wrap = (s: string, size = 9, f = font, col = INK) => { let cur = ''; for (const w of s.split(' ')) { if (f.widthOfTextAtSize(cur + ' ' + w, size) > W - 2 * M) { text(cur, M, size, f, col); y -= 12; cur = w; } else cur = cur ? cur + ' ' + w : w; } if (cur) { text(cur, M, size, f, col); y -= 12; } };
+  const sumInc = (a: PdfReport['income']) => a.reduce((s, i) => s + i.naira, 0);
+  const payKinds = (k: string) => k === 'professional' || k === 'employment' || k === 'business';
+  const pay = r.income.filter(i => payKinds(i.kind));
+  const passive = r.income.filter(i => !payKinds(i.kind));
+  if (!r.income.length) {
+    wrap('No income at all was recorded in the tax year.');
+  } else {
+    wrap(`Total income received in ${r.year}: ${NGN(sumInc(r.income))} across ${r.income.length} event${r.income.length === 1 ? '' : 's'}.`);
+    if (pay.length) {
+      wrap(`Payments for work (the freelancer line): ${NGN(sumInc(pay))} across ${pay.length} receipt${pay.length === 1 ? '' : 's'}, charged when received at the CBN rate on each date.`);
+      text('Payments for work, largest first:', M, 9, bold); y -= 12;
+      for (const i of [...pay].sort((a, b) => b.naira - a.naira).slice(0, 12)) {
+        if (y < M + 60) { page = doc.addPage([W, H]); y = H - M; }
+        const rateTxt = i.rate ? ` (CBN rate ${Math.round(i.rate).toLocaleString('en-NG')}/USD that day)` : '';
+        text(`${i.date}: you were paid ${num(i.units)} ${i.asset}, worth ${NGN(i.naira)}${rateTxt}.`, M, 8.5); y -= 11;
+      }
+      if (pay.length > 12) { text(`\u2026 and ${pay.length - 12} more payment lines; the full CSV export has every line.`, M, 8, font, MUT); y -= 12; }
+    } else {
+      wrap('No payments for work were recorded this year; every income line in section 4 is a reward, airdrop or other income.');
+    }
+    if (passive.length) wrap(`Rewards and passive income (staking, airdrops, DeFi, other): ${NGN(sumInc(passive))} across ${passive.length} line${passive.length === 1 ? '' : 's'}.`);
+  }
+  y -= 4; rule();
+
   // --- Basis & method
-  text('5. Basis of preparation', M, 12, bold, ACC); y -= 15;
+  text('6. Basis of preparation', M, 12, bold, ACC); y -= 15;
   for (const line of [
     'Cost base: acquisitions are pooled per asset and disposed on ' + 'FIFO' + ' (or WAC where chosen), with value converted to naira at the official CBN rate on the transaction date.',
     'Transfers between your own wallets and your exchange accounts are treated as not taxable (Guidelines para 7.2.2); wallet addresses you entered and exchange statements you uploaded are matched to apply this.',
     'Stablecoin-to-stablecoin swaps and non-chargeable transfers are excluded from chargeable gains; notes you typed are classified by the app\u2019s own language model but the rules engine alone computes tax.',
+    'Income received in crypto or stablecoins for work is charged when you receive it (its dollar value times the CBN rate that day); section 5 lists those receipts one by one.',
     'This report is an estimate prepared from public blockchain data and the statements you uploaded. It is not tax advice and not a filing. Verify the lines marked "needs review" before relying on any figure.',
     'If you reinvested disposal proceeds in Nigerian companies within 12 months of the disposal, you may qualify for reinvestment relief under the Nigeria Tax Act 2025. Where you entered an amount, this report reduces chargeable income by it; confirm the relief conditions with your tax adviser before filing.',
     'Street USDT in Nigeria usually trades a few percent above the CBN rate used here, so the naira totals read conservative.',
@@ -144,7 +174,7 @@ export async function renderPdf(r: PdfReport): Promise<Uint8Array> {
   // --- Warnings
   if (r.warnings.length || r.needsReview || r.unpriced) {
     rule();
-    text('6. Things to check before filing', M, 12, bold, ACC); y -= 15;
+    text('7. Things to check before filing', M, 12, bold, ACC); y -= 15;
     if (r.needsReview) { text(`${r.needsReview} transaction(s) could not be labelled automatically; open the web report and label them so the totals change where needed.`, M, 9, font, MUT); y -= 12; }
     if (r.unpriced) { text(`${r.unpriced} transaction(s) had no historical price available and are excluded from the totals.`, M, 9, font, MUT); y -= 12; }
     for (const w of r.warnings.slice(0, 12)) { const ws = w.split(' '); let cur = ''; for (const ww of ws) { if (font.widthOfTextAtSize(cur + ' ' + ww, 8.5) > W - 2 * M) { text(clip(cur, W - 2 * M, 8.5), M, 8.5, font, MUT); y -= 11; cur = ww; } else cur = cur ? cur + ' ' + ww : ww; } if (cur) { text(clip(cur, W - 2 * M, 8.5), M, 8.5, font, MUT); y -= 11; } }
@@ -154,7 +184,7 @@ export async function renderPdf(r: PdfReport): Promise<Uint8Array> {
   // --- Exchange files used
   if (r.exchange && r.exchange.files.length) {
     rule();
-    text('7. Exchange statements used', M, 12, bold, ACC); y -= 15;
+    text('8. Exchange statements used', M, 12, bold, ACC); y -= 15;
     for (const f of r.exchange.files) { text(`${f.name} (${f.kind}, ${f.rows} rows)`, M, 9); y -= 12; }
     text(`Wallet-to-exchange transfers matched and excluded from chargeable events: ${r.exchange.matched}`, M, 9); y -= 12;
   }

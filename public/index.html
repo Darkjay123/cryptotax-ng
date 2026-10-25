@@ -350,6 +350,15 @@ function render(){
     h += `<table><tr><th>Date</th><th>Received</th><th>Type</th><th>Dollar value</th><th>CBN rate</th><th>Taxable ₦</th></tr>`;
     for (const i of j.income) h += `<tr><td>${i.date}</td><td>${units(i.units)} ${esc(i.asset)}</td><td>${esc(i.kind)}</td><td>${usd(i.usdFmv)}</td><td>${i.rate}</td><td>${ngn(i.naira)}</td></tr>`;
     h += `</table>`;
+    const workKinds = ['professional', 'employment', 'business'];
+    const pay = j.income.filter(i => workKinds.includes(i.kind));
+    const passive = j.income.filter(i => !workKinds.includes(i.kind));
+    const sum = a => a.reduce((s, i) => s + i.naira, 0);
+    h += `<div class="card" style="margin-top:12px"><small>Income summary (freelancers and stablecoin earners)</small><br><b>${ngn(sum(j.income))}</b> received across ${j.income.length} event${j.income.length === 1 ? '' : 's'} this year.`;
+    if (pay.length) h += `<br>Payments for work: <b>${ngn(sum(pay))}</b> across ${pay.length} receipt${pay.length === 1 ? '' : 's'}, charged when received at the CBN rate on each date.`;
+    else h += `<br>No payments for work were recorded; all income here is rewards or other income.`;
+    if (passive.length) h += `<br>Rewards and passive income (staking, airdrops, DeFi): ${ngn(sum(passive))}.`;
+    h += `<br><span class="why">All figures are chargeable income under the Nigeria Tax Act 2025, effective 1 January 2026. Tax an exchange already withheld is credited.</span></div>`;
   } else if (tab === 'disp') {
     h += `<table><tr><th>Date</th><th>Disposed</th><th>Cost $</th><th>Proceeds $</th><th>Gain $</th><th>CBN rate</th><th>Gain ₦</th></tr>`;
     for (const d of j.disposals) h += `<tr><td>${d.date}</td><td>${units(d.units)} ${esc(d.asset)}${d.category===2?' <span class="why">(stablecoin)</span>':''}</td><td>${usd(d.usdCost)}</td><td>${usd(d.usdProceeds)}</td><td>${usd(d.usdGain)}</td><td>${d.rate}</td><td>${ngn(d.nairaGain)}</td></tr>`;
@@ -360,7 +369,7 @@ function render(){
       <p><b>Stablecoins.</b> USDT, USDC and similar are measured against the dollar, so selling them usually has no gain and no withholding tax (para 9.5(1)).</p>
       <p><b>Not taxable.</b> Moving coins between your own wallets, wrapping, and simply holding (para 7.2).</p>
       <p><b>Losses</b> on crypto only reduce crypto gains, and carry forward (para 9.4). Costs are matched first in, first out.</p>
-      <p><b>Your bill.</b> Crypto income and net gains are added to your other income and taxed at the 2026 personal income tax bands: 0% on the first ₦800,000, then 15% to 25%. Tax already withheld by an exchange is taken off.</p>
+      <p><b>Your bill.</b> Crypto income and net gains are added to your other income and taxed at the Nigeria Tax Act 2025 personal income tax bands, effective 1 January 2026: 0% on the first ₦800,000, then 15% to 25%. Tax already withheld by an exchange is taken off.</p>
       <p class="hint">${j.sources.map(esc).join('<br>')}</p>`;
   }
   h += `</div>`;

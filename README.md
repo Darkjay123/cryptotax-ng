@@ -43,9 +43,9 @@ From 1 January 2026 every Nigerian earning income must register, file and keep r
 1. Reads your wallet history back to 2020 (so older purchases give a cost base): Tron (TRC-20 and TRX), Bitcoin, and 65 EVM chains: 61 through public Blockscout explorers, Avalanche and Metis through Routescan's free keyless API, and BSC and Fantom through Ankr's Advanced API when an ANKR_API_KEY environment variable is set (opBNB and Sonic are not supported by that API any more), including coins paid out by contracts (exchange withdrawals, bridges, DEX sales), which only show up as internal transactions. Each chain is probed once first, so only chains your address has actually touched are read deeply. Up to 2,000 records per list; the report says so if a wallet is longer.
 2. Values every movement in US dollars (stablecoins at their peg, other tokens at market price on the day).
 3. Converts to naira at the CBN central rate on each transaction date (last published rate on weekends and holidays).
-4. Applies the NRS rules and estimates the extra personal income tax your crypto adds.
+4. Applies the NRS rules and estimates the extra personal income tax your crypto adds, under the Nigeria Tax Act 2025 (effective 1 January 2026) as read by NRS Information Circular 2026/21. The report and the filing PDF name the law they apply, so the numbers never float free of their basis.
 
-You can relabel anything (payment for work, bought with naira, own wallet, P2P sale, gift, spam) and recalculate. Export a CSV for your accountant.
+You can relabel anything (payment for work, bought with naira, own wallet, P2P sale, gift, spam) and recalculate. Export a CSV for your accountant, or the filing PDF, which includes an income summary for freelancers and stablecoin earners: every payment for work listed with its date, its dollar value and its naira value at that day's CBN rate.
 
 ## The rules, as implemented
 
